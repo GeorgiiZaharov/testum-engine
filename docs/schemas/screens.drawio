@@ -1,0 +1,28 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.5.2 Safari/537.36" version="29.5.2">
+  <diagram name="Page-1" id="o8GAL9RXDIIcnMy-AIE0">
+    <mxGraphModel dx="1641" dy="862" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="vsMeN8IzSNY2V2AG_ICf-2" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Пользователь авторизован?" vertex="1">
+          <mxGeometry height="80" width="190" x="605" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="vsMeN8IzSNY2V2AG_ICf-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Страница входа" vertex="1">
+          <mxGeometry height="60" width="120" x="640" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="vsMeN8IzSNY2V2AG_ICf-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Страница &quot;Доступные тесты&quot;" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="vsMeN8IzSNY2V2AG_ICf-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Страница &quot;Мои тесты&quot;" vertex="1">
+          <mxGeometry height="60" width="120" x="640" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="vsMeN8IzSNY2V2AG_ICf-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Страница &quot;Лекторы системы&quot;" vertex="1">
+          <mxGeometry height="60" width="120" x="820" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="vsMeN8IzSNY2V2AG_ICf-9" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Пользователь студент?" vertex="1">
+          <mxGeometry height="80" width="170" x="425" y="630" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

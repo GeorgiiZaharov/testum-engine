@@ -1,0 +1,134 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"go.uber.org/zap"
+
+	"testum-engine/app/internal/adapter/db"
+	ldapadap "testum-engine/app/internal/adapter/ldap"
+	config "testum-engine/app/internal/config"
+
+	authhandler "testum-engine/app/internal/handler/auth"
+	"testum-engine/app/internal/handler/middleware"
+
+	authcore "testum-engine/app/internal/service/core/auth"
+	getmeuc "testum-engine/app/internal/service/use_case/auth/get_me"
+	loginuc "testum-engine/app/internal/service/use_case/auth/login"
+	refreshuc "testum-engine/app/internal/service/use_case/auth/refresh"
+)
+
+func main() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	defer func() { _ = logger.Sync() }()
+
+	cfg := config.Load()
+
+	// =========================
+	// DB
+	// =========================
+	database, err := db.NewDB(db.DBOptions{
+		Host: cfg.DB.Host,
+		Port: cfg.DB.Port,
+		User: cfg.DB.User,
+		Pass: cfg.DB.Pass,
+		Name: cfg.DB.Name,
+	})
+	if err != nil {
+		logger.Fatal("failed to connect db", zap.Error(err))
+	}
+
+	// =========================
+	// Adapters
+	// =========================
+	ldapAdapter := ldapadap.NewLdapAdapter(cfg.Ldap, logger)
+
+	// =========================
+	// Core services
+	// =========================
+	authService := authcore.New(cfg.App.Secret, logger)
+
+	// =========================
+	// Use cases
+	// =========================
+	loginUC := loginuc.NewUseCase(
+		loginuc.NewFactory(database, logger),
+		ldapAdapter,
+		authService,
+		logger,
+	)
+
+	refreshUC := refreshuc.NewUseCase(
+		refreshuc.NewFactory(database, logger),
+		authService,
+		logger,
+	)
+
+	getMeUC := getmeuc.NewUseCase(
+		getmeuc.NewFactory(database, logger),
+		ldapAdapter,
+		logger,
+	)
+
+	// =========================
+	// Handlers
+	// =========================
+	authHandler := authhandler.New(loginUC, refreshUC, getMeUC)
+
+	jwtMiddleware := middleware.JWT(authService)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/auth/login", authHandler.Login)
+	mux.HandleFunc("/auth/refresh", authHandler.Refresh)
+	mux.Handle(
+		"/auth/me",
+		jwtMiddleware(http.HandlerFunc(authHandler.GetMe)),
+	)
+
+	// =========================
+	// HTTP server
+	// =========================
+	server := &http.Server{
+		Addr:         ":" + cfg.App.Port,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// =========================
+	// Graceful shutdown
+	// =========================
+	go func() {
+		logger.Info("server started", zap.String("addr", server.Addr))
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal("server failed", zap.Error(err))
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	<-stop
+
+	logger.Info("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error("server shutdown failed", zap.Error(err))
+	}
+
+	logger.Info("server stopped")
+}
