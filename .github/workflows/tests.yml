@@ -38,4 +38,4 @@ jobs:
         run: sleep 5
 
       - name: Run tests
-        run: go test ./... -coverprofile=coverage.out
+        run: go test ./... -coverprofile=coverage.out -p=1
