@@ -56,7 +56,7 @@ func NewContainer(cfg config.Config) (*Container, error) {
 	}
 
 	migCfg := db.MigrationConfig{
-		Dir:     "../../../migrations",
+		Dir:     "./migrations",
 		Dialect: "mysql",
 	}
 

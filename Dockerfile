@@ -15,6 +15,8 @@ WORKDIR /app
 
 COPY --from=builder /app/testum .
 
+COPY --from=builder /app/app/migrations ./migrations
+
 EXPOSE 8080
 
 CMD ["./testum"]
