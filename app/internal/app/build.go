@@ -6,6 +6,8 @@ import (
 	"testum-engine/app/internal/config"
 
 	"testum-engine/app/internal/handler/middleware"
+
+	"github.com/rs/cors"
 )
 
 func Build(cfg config.Config) (*App, error) {
@@ -127,9 +129,28 @@ func Build(cfg config.Config) (*App, error) {
 		jwtMiddleware(http.HandlerFunc(studentTestAttemptHandler.PostBaseAnswers)),
 	)
 
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost:3000",
+			"http://localhost:5173",
+		},
+		AllowedMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+		AllowedHeaders: []string{
+			"Authorization",
+			"Content-Type",
+		},
+		AllowCredentials: true,
+	}).Handler(mux)
+
 	server := &http.Server{
 		Addr:    ":" + cfg.App.Port,
-		Handler: mux,
+		Handler: corsHandler,
 	}
 
 	return &App{
