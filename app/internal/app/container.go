@@ -55,6 +55,17 @@ func NewContainer(cfg config.Config) (*Container, error) {
 		return nil, err
 	}
 
+	migCfg := db.MigrationConfig{
+		Dir:     "../../../migrations",
+		Dialect: "mysql",
+	}
+
+	if err := db.RunMigrations(database.DB.DB, migCfg); err != nil {
+		return nil, err
+	}
+
+	logger.Info("database migrations applied successfully")
+
 	// =====================
 	// adapters
 	// =====================
