@@ -1,4 +1,4 @@
-[![Coverage](https://codecov.io/gh/GeorgiiZaharov/testum-engine/branch/main/graph/badge.svg)](https://codecov.io/gh/GeorgiiZaharov/testum-engine)
+[![codecov](https://codecov.io/gh/GeorgiiZaharov/testum-engine/graph/badge.svg)](https://codecov.io/gh/GeorgiiZaharov/testum-engine)
 [![Go Tests](https://github.com/GeorgiiZaharov/testum-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/GeorgiiZaharov/testum-engine/actions/workflows/tests.yml)
 
 # Testum
