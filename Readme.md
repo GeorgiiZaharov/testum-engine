@@ -3,7 +3,6 @@
 [![Go Tests](https://github.com/GeorgiiZaharov/testum-engine/actions/workflows/tests.yml/badge.svg)](https://github.com/GeorgiiZaharov/testum-engine/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/GeorgiiZaharov/testum-engine/graph/badge.svg)](https://codecov.io/gh/GeorgiiZaharov/testum-engine)
 
-
 ![GitHub last commit](https://img.shields.io/github/last-commit/GeorgiiZaharov/testum-engine)
 [![Release](https://img.shields.io/github/v/release/GeorgiiZaharov/testum-engine?style=flat-square)](https://github.com/GeorgiiZaharov/testum-engine/releases)
 
@@ -26,4 +25,31 @@
   - **Студент** — прохождение тестов и просмотр своих результатов.  
   - **Лектор** — создание, управление и анализ тестов.  
   - **Администратор** — управление ролями пользователей.
-  
+
+## Сборка и установка
+
+1. Клонируем репозиторий:
+```bash
+git clone git@github.com:GeorgiiZaharov/testum-engine.git
+cd testum-engine
+````
+
+2. Создаём `.env` на основе `.env.example`.
+
+3. Сборка и запуск:
+
+```bash
+make
+```
+
+4. Запуск тестов с покрытием:
+
+```bash
+make test
+```
+
+5. Очистка локальной установки Go (опционально):
+
+```bash
+make clear
+```
