@@ -37,9 +37,20 @@ func Build(cfg config.Config) (*App, error) {
 	)
 
 	// Admin endpoints
-	mux.HandleFunc("POST /admin/lecturers", adminHandler.CreateLecturer)
-	mux.HandleFunc("DELETE /admin/lecturers/{lecturer_id}", adminHandler.DeleteLecturer)
-	mux.HandleFunc("GET /admin/lecturers", adminHandler.GetLecturers)
+	mux.Handle(
+		"POST /admin/lecturers",
+		jwtMiddleware(http.HandlerFunc(adminHandler.CreateLecturer)),
+	)
+
+	mux.Handle(
+		"DELETE /admin/lecturers/{lecturer_id}",
+		jwtMiddleware(http.HandlerFunc(adminHandler.DeleteLecturer)),
+	)
+
+	mux.Handle(
+		"GET /admin/lecturers",
+		jwtMiddleware(http.HandlerFunc(adminHandler.GetLecturers)),
+	)
 
 	// Lecturer endpoints
 	// File
