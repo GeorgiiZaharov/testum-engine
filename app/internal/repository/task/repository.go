@@ -41,6 +41,7 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 			imageURL *string
 			isHard   bool
 
+			answerID    int
 			answerText  string
 			answerImage *string
 			isCorrect   bool
@@ -51,6 +52,7 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 			&text,
 			&imageURL,
 			&isHard,
+			&answerID,
 			&answerText,
 			&answerImage,
 			&isCorrect,
@@ -61,6 +63,7 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 		task, exists := taskMap[taskID]
 		if !exists {
 			task = &Task{
+				ID:       taskID,
 				Text:     text,
 				ImageURL: imageURL,
 				IsHard:   isHard,
@@ -70,6 +73,7 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 		}
 
 		task.Answers = append(task.Answers, Answer{
+			ID:        answerID,
 			Text:      answerText,
 			ImageURL:  answerImage,
 			IsCorrect: isCorrect,
@@ -98,6 +102,7 @@ func (r *repository) fetchTasks(ctx context.Context, testID int, isHard bool) ([
 			t.image_url,
 			t.is_hard,
 
+			a.id,
 			a.text,
 			a.image_url,
 			a.is_correct

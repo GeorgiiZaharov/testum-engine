@@ -96,4 +96,3 @@ func Test_GetHardTasks_InvalidInput(t *testing.T) {
 	assert.Equal(t, ErrInvalidInput, err)
 	assert.Empty(t, resp.HardTasks)
 }
-

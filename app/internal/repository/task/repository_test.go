@@ -70,9 +70,11 @@ func TestGetBaseTasks_HappyPath(t *testing.T) {
 
 	// TEST 1 base task (is_hard = false)
 	assert.Equal(t, "Solve equation: 2 + 2 = ?", tasks[0].Text)
+	assert.Equal(t, 1, tasks[0].ID)
 	assert.False(t, tasks[0].IsHard)
 
 	require.Len(t, tasks[0].Answers, 2)
+	require.Equal(t, tasks[0].Answers[0].ID, 1)
 }
 
 func TestGetHardTasks_HappyPath(t *testing.T) {

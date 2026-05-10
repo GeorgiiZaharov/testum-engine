@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-
-	studenttestrepo "testum-engine/app/internal/repository/student_test"
 )
 
 type UseCase struct {
@@ -55,22 +53,8 @@ func (uc *UseCase) Execute(ctx context.Context, req GetBaseTasksRequest) (GetBas
 			return err
 		}
 
-		if result.DateEnd != nil && !result.DateStart.IsZero() {
+		if result.DateEnd != nil {
 			return ErrTestCompleted
-		}
-
-		// 3. Старт теста (идемпотентно)
-		_, err = r.StudentTest.StartTest(ctx, studenttestrepo.StartTestParams{
-			UserID: req.UserID,
-			TestID: req.TestID,
-		})
-		if err != nil {
-			uc.log.Error("failed to start test",
-				zap.Error(err),
-				zap.Int("user_id", req.UserID),
-				zap.Int("test_id", req.TestID),
-			)
-			return err
 		}
 
 		// 4. Получение базовых задач
@@ -91,12 +75,14 @@ func (uc *UseCase) Execute(ctx context.Context, req GetBaseTasksRequest) (GetBas
 
 			for _, a := range t.Answers {
 				answers = append(answers, Answer{
+					ID:       a.ID,
 					Text:     a.Text,
 					ImageURL: a.ImageURL,
 				})
 			}
 
 			resultTasks = append(resultTasks, Task{
+				ID:       t.ID,
 				Text:     t.Text,
 				ImageURL: t.ImageURL,
 				IsHard:   t.IsHard,

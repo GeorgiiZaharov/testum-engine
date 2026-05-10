@@ -70,17 +70,20 @@ func (uc *UseCase) Execute(
 		}
 
 		_, err = r.Result.GetStudentResult(ctx, userID, testID)
-		if err != nil {
-			if errors.Is(err, resultrepo.ErrResultNotFound) {
-				ok, err := r.StudentTest.StartTest(ctx, studenttestrepo.StartTestParams{
-					UserID: userID,
-					TestID: testID,
-					Group:  *user.Group,
-				})
-				if err != nil || !ok {
-					return err
-				}
+
+		if errors.Is(err, resultrepo.ErrResultNotFound) {
+			ok, err := r.StudentTest.StartTest(ctx, studenttestrepo.StartTestParams{
+				UserID: userID,
+				TestID: testID,
+				Group:  *user.Group,
+			})
+			if err != nil || !ok {
+				uc.log.Error("start test failed", zap.Error(err))
+				return err
 			}
+		} else if err != nil {
+			uc.log.Error("get student result failed", zap.Error(err))
+			return err
 		}
 
 		// 2. already submitted?
@@ -96,6 +99,7 @@ func (uc *UseCase) Execute(
 		// 3. correct answers
 		trueAnswers, err := r.Answer.GetHardAnswersByTest(ctx, testID)
 		if err != nil {
+			uc.log.Error("get hard answers by test failed", zap.Error(err))
 			return err
 		}
 
@@ -111,6 +115,7 @@ func (uc *UseCase) Execute(
 		// 5. save answers
 		ok, err = r.Answer.SaveHardAnswers(ctx, userID, extractRepoAnswerIDs(repoAnswers))
 		if err != nil || !ok {
+			uc.log.Error("faild to save answers", zap.Error(err))
 			return ErrFailedToSaveAnswers
 		}
 

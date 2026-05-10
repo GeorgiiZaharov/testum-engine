@@ -5,6 +5,7 @@ type GetTasksResponse struct {
 }
 
 type TaskResponse struct {
+	ID       int              `json:"id"`
 	Text     string           `json:"text"`
 	ImageURL *string          `json:"image_url,omitempty"`
 	IsHard   bool             `json:"is_hard"`
@@ -12,12 +13,12 @@ type TaskResponse struct {
 }
 
 type AnswerResponse struct {
+	ID       int     `json:"id"`
 	Text     string  `json:"text"`
 	ImageURL *string `json:"image_url,omitempty"`
 }
 
 type PostHardAnswersResponse struct {
-	Success      bool `json:"success"`
 	IsAllCorrect bool `json:"is_all_correct"`
 }
 

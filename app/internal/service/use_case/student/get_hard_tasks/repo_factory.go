@@ -7,6 +7,9 @@ import (
 	"testum-engine/app/internal/adapter/db"
 	"testum-engine/app/internal/repository/access"
 	"testum-engine/app/internal/repository/task"
+
+	resultrepo "testum-engine/app/internal/repository/result"
+	studenttestrepo "testum-engine/app/internal/repository/student_test"
 )
 
 type factory struct {
@@ -24,8 +27,10 @@ func NewFactory(db *db.DB, log *zap.Logger) repoFactory {
 func (f *factory) WithTx(ctx context.Context, fn func(r repositories) error) error {
 	return f.db.WithTx(ctx, func(tx *sql.Tx) error {
 		repos := repositories{
-			Access: access.NewRepository(tx, f.log),
-			Task:   task.NewRepository(tx, f.log),
+			Access:      access.NewRepository(tx, f.log),
+			Task:        task.NewRepository(tx, f.log),
+			StudentTest: studenttestrepo.NewRepository(tx, f.log),
+			Result:      resultrepo.NewRepository(tx, f.log),
 		}
 		return fn(repos)
 	})
