@@ -47,7 +47,7 @@ func TestGiveAccess_Success(t *testing.T) {
 		},
 	}
 
-	h := New(nil, uc, nil)
+	h := New(nil, uc, nil, nil)
 
 	body := dto.AccessRequest{
 		Group: "A-01",
@@ -79,7 +79,7 @@ func TestGiveAccess_Success(t *testing.T) {
 }
 
 func TestGiveAccess_InvalidBody(t *testing.T) {
-	h := New(nil, &giveAccessUCStub{}, nil)
+	h := New(nil, &giveAccessUCStub{}, nil, nil)
 
 	req := httptest.NewRequest(
 		http.MethodPost,
@@ -130,7 +130,7 @@ func TestGiveAccess_ErrorMapping(t *testing.T) {
 				},
 			}
 
-			h := New(nil, uc, nil)
+			h := New(nil, uc, nil, nil)
 
 			body := dto.AccessRequest{
 				Group: "A-01",

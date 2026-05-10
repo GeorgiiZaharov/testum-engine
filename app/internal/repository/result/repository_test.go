@@ -218,3 +218,66 @@ func TestGetGroupResult_RowsError(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+// =========================
+// DeleteAttempt
+// =========================
+func TestDeleteAttempt_HappyPath(t *testing.T) {
+	env := setup(t)
+
+	err := env.repo.DeleteAttempt(env.ctx, 1, 3)
+
+	require.NoError(t, err)
+}
+
+func TestDeleteAttempt_NotFound(t *testing.T) {
+	env := setup(t)
+
+	err := env.repo.DeleteAttempt(env.ctx, 999, 999)
+
+	require.NoError(t, err)
+}
+
+func TestDeleteAttempt_StudentAnswersError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	r := NewRepository(db, zap.NewNop())
+
+	mock.ExpectExec("DELETE sa").
+		WithArgs(3, 1).
+		WillReturnError(errors.New("db error"))
+
+	err = r.DeleteAttempt(context.Background(), 1, 3)
+
+	require.Error(t, err)
+	require.Equal(t, ErrDeleteFailed, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeleteAttempt_StudentTestsError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	r := NewRepository(db, zap.NewNop())
+
+	// first query OK
+	mock.ExpectExec("DELETE sa").
+		WithArgs(3, 1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// second query FAILS
+	mock.ExpectExec("DELETE FROM student_tests").
+		WithArgs(3, 1).
+		WillReturnError(errors.New("db error"))
+
+	err = r.DeleteAttempt(context.Background(), 1, 3)
+
+	require.Error(t, err)
+	require.Equal(t, ErrDeleteFailed, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}

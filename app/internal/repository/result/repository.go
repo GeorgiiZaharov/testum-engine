@@ -15,6 +15,7 @@ import (
 type Repository interface {
 	GetGroupResult(ctx context.Context, testID int, group string, year int) ([]StudentResult, error)
 	GetStudentResult(ctx context.Context, userID int, testID int) (TestResult, error)
+	DeleteAttempt(ctx context.Context, testID int, userID int) error
 }
 
 type repository struct {
@@ -165,4 +166,41 @@ func (r *repository) GetStudentResult(ctx context.Context, userID int, testID in
 	}
 
 	return result, nil
+}
+
+func (r *repository) DeleteAttempt(ctx context.Context, testID int, userID int) error {
+
+	_, err := r.db.ExecContext(ctx, `
+		DELETE sa
+		FROM student_answers sa
+		JOIN answers a ON a.id = sa.answer_id
+		JOIN tasks t ON t.id = a.task_id
+		WHERE sa.student_id = ?
+		  AND t.test_id = ?
+	`, userID, testID)
+
+	if err != nil {
+		r.log.Error("failed to delete student answers",
+			zap.Error(err),
+			zap.Int("user_id", userID),
+			zap.Int("test_id", testID),
+		)
+		return ErrDeleteFailed
+	}
+
+	_, err = r.db.ExecContext(ctx, `
+		DELETE FROM student_tests
+		WHERE student_id = ? AND test_id = ?
+	`, userID, testID)
+
+	if err != nil {
+		r.log.Error("failed to delete student test",
+			zap.Error(err),
+			zap.Int("user_id", userID),
+			zap.Int("test_id", testID),
+		)
+		return ErrDeleteFailed
+	}
+
+	return nil
 }

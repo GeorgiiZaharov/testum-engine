@@ -7,3 +7,7 @@ type DeleteTestResponse struct {
 type AccessResponse struct {
 	Success bool `json:"success"`
 }
+
+type DeleteAttemptResponse struct {
+	Success bool `json:"success"`
+}

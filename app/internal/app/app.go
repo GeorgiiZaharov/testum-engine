@@ -51,4 +51,3 @@ func (a *App) Run() error {
 
 	return nil
 }
-

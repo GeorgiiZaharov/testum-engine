@@ -79,3 +79,12 @@ GetTestsUseCase(TestRepository)
 GetTestResultUseCase(StudentTestRepository)
 ```
 
+## **DELETE /lecturer/attempt/test/{test_id}/user/{user_id} + jwt**
+
+**resp**: `ok`
+
+Удаляет попытку в тесте указанного студента.
+
+```
+DeleteAttemptUseCase(TestRepository)
+```

@@ -10,6 +10,7 @@ import (
 	"testum-engine/app/internal/handler/lecturer/write/dto"
 	"testum-engine/app/internal/handler/middleware"
 
+	deleteattempt "testum-engine/app/internal/service/use_case/lecturer/delete_attempt"
 	deletetest "testum-engine/app/internal/service/use_case/lecturer/delete_test"
 	giveaccess "testum-engine/app/internal/service/use_case/lecturer/give_access"
 	takeaccess "testum-engine/app/internal/service/use_case/lecturer/take_access"
@@ -31,25 +32,32 @@ type TakeAccessUseCase interface {
 	Execute(ctx context.Context, req takeaccess.TakeAccessRequest) (takeaccess.TakeAccessResponse, error)
 }
 
+type DeleteAttemptUseCase interface {
+	Execute(rCtx context.Context, req deleteattempt.DeleteAttemptRequest) (deleteattempt.DeleteAttemptResponse, error)
+}
+
 //
 // HANDLER
 //
 
 type Handler struct {
-	deleteTestUC DeleteTestUseCase
-	giveAccessUC GiveAccessUseCase
-	takeAccessUC TakeAccessUseCase
+	deleteTestUC    DeleteTestUseCase
+	giveAccessUC    GiveAccessUseCase
+	takeAccessUC    TakeAccessUseCase
+	deleteAttemptUC DeleteAttemptUseCase
 }
 
 func New(
 	deleteTestUC DeleteTestUseCase,
 	giveAccessUC GiveAccessUseCase,
 	takeAccessUC TakeAccessUseCase,
+	deleteAttemptUC DeleteAttemptUseCase,
 ) *Handler {
 	return &Handler{
-		deleteTestUC: deleteTestUC,
-		giveAccessUC: giveAccessUC,
-		takeAccessUC: takeAccessUC,
+		deleteTestUC:    deleteTestUC,
+		giveAccessUC:    giveAccessUC,
+		takeAccessUC:    takeAccessUC,
+		deleteAttemptUC: deleteAttemptUC,
 	}
 }
 
@@ -104,6 +112,19 @@ func mapAccessError(err error) (int, string) {
 		return http.StatusForbidden, "access denied"
 	case errors.Is(err, takeaccess.ErrInvalidInput):
 		return http.StatusBadRequest, "invalid input"
+	default:
+		return http.StatusInternalServerError, "internal server error"
+	}
+}
+
+func mapDeleteAttemptError(err error) (int, string) {
+	switch {
+	case errors.Is(err, deleteattempt.ErrInvalidInput):
+		return http.StatusBadRequest, "invalid input"
+	case errors.Is(err, deleteattempt.ErrAccessDenied):
+		return http.StatusForbidden, "access denied"
+	case errors.Is(err, deleteattempt.ErrDeleteFailed):
+		return http.StatusInternalServerError, "failed to delete attempt"
 	default:
 		return http.StatusInternalServerError, "internal server error"
 	}
@@ -217,4 +238,46 @@ func (h *Handler) TakeAccess(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.AccessResponse{
 		Success: res.Success,
 	})
+}
+
+//
+// DELETE /lecturer/attempt/test/{test_id}/user/{user_id}
+//
+
+func (h *Handler) DeleteAttempt(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// Парсим test_id и student user_id из URL
+	testIDStr := r.PathValue("test_id")
+	studentIDStr := r.PathValue("user_id")
+
+	testID, err := strconv.Atoi(testIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid test_id")
+		return
+	}
+
+	studentID, err := strconv.Atoi(studentIDStr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid user_id")
+		return
+	}
+
+	// Вызов use case
+	resp, err := h.deleteAttemptUC.Execute(r.Context(), deleteattempt.DeleteAttemptRequest{
+		LecturerID: userID,
+		TestID:     testID,
+		UserID:     studentID,
+	})
+	if err != nil {
+		code, msg := mapDeleteAttemptError(err)
+		writeError(w, code, msg)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.FromUseCaseResponse(resp))
 }

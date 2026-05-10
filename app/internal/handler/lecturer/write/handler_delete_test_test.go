@@ -45,7 +45,7 @@ func TestDeleteTest_Success(t *testing.T) {
 		},
 	}
 
-	h := New(uc, nil, nil)
+	h := New(uc, nil, nil, nil)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -70,7 +70,7 @@ func TestDeleteTest_Success(t *testing.T) {
 }
 
 func TestDeleteTest_Unauthorized(t *testing.T) {
-	h := New(&deleteTestUCStub{}, nil, nil)
+	h := New(&deleteTestUCStub{}, nil, nil, nil)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -86,7 +86,7 @@ func TestDeleteTest_Unauthorized(t *testing.T) {
 }
 
 func TestDeleteTest_InvalidTestID(t *testing.T) {
-	h := New(&deleteTestUCStub{}, nil, nil)
+	h := New(&deleteTestUCStub{}, nil, nil, nil)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -142,7 +142,7 @@ func TestDeleteTest_ErrorMapping(t *testing.T) {
 				},
 			}
 
-			h := New(uc, nil, nil)
+			h := New(uc, nil, nil, nil)
 
 			req := httptest.NewRequest(
 				http.MethodDelete,

@@ -9,6 +9,7 @@
 |------|----------|--------|----------|
 | `GetGroupResult(test_id, group, year)` | int, string, int | `[]StudentResult` | Получает результаты группы year лет назад|
 | `GetStudentResult(user_id, test_id)` | int, int | `TestResult` | Получает результат студента |
+| `DeleteAttempt(test_id, user_id)` | int, int | error | Удаляет попытку студента в тесте |
 
 ## TestResult
 TestResult {

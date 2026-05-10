@@ -176,3 +176,56 @@ curl -X DELETE http://localhost:8080/lecturer/tests/123/access \
     "group": "A-01"
   }'
 ```
+
+---
+
+## Endpoint summary
+* Method: `DELETE`
+* URL: `/lecturer/attempt/test/{test_id}/user/{user_id}`
+* Auth: `Required`
+* Description: Deletes a student's attempt for a specific test.
+
+---
+
+## Request
+
+### Path params
+
+| Name    | Type | Required | Description               |
+| ------- | ---- | -------- | ------------------------- |
+| test_id | int  | yes      | Unique test identifier    |
+| user_id | int  | yes      | Unique student identifier |
+
+---
+
+## Response
+
+### Success (HTTP 200)
+
+```json
+{
+  "success": true
+}
+````
+
+---
+
+## Errors
+
+* 400 — invalid test_id or user_id
+* 400 — invalid input
+* 401 — unauthorized
+* 403 — access denied
+* 500 — internal server error
+
+---
+
+## cURL example
+
+```bash
+curl -X DELETE http://localhost:8080/lecturer/attempt/test/123/user/456 \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+

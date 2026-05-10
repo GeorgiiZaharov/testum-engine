@@ -47,7 +47,7 @@ func TestTakeAccess_Success(t *testing.T) {
 		},
 	}
 
-	h := New(nil, nil, uc)
+	h := New(nil, nil, uc, nil)
 
 	body := dto.AccessRequest{
 		Group: "A-01",
@@ -79,7 +79,7 @@ func TestTakeAccess_Success(t *testing.T) {
 }
 
 func TestTakeAccess_InvalidBody(t *testing.T) {
-	h := New(nil, nil, &takeAccessUCStub{})
+	h := New(nil, nil, &takeAccessUCStub{}, nil)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
@@ -130,7 +130,7 @@ func TestTakeAccess_ErrorMapping(t *testing.T) {
 				},
 			}
 
-			h := New(nil, nil, uc)
+			h := New(nil, nil, uc, nil)
 
 			body := dto.AccessRequest{
 				Group: "A-01",

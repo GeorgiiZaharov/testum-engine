@@ -101,6 +101,11 @@ func Build(cfg config.Config) (*App, error) {
 		jwtMiddleware(http.HandlerFunc(lecturerWriteHandler.TakeAccess)),
 	)
 
+	mux.Handle(
+		"DELETE /lecturer/attempt/test/{test_id}/user/{user_id}",
+		jwtMiddleware(http.HandlerFunc(lecturerWriteHandler.DeleteAttempt)),
+	)
+
 	// Student
 	// Get test
 	mux.Handle(

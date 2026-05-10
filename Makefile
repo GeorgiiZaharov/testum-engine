@@ -30,9 +30,9 @@ build:
 # 	@rm -rf $(GO_DIR)
 # 	@echo "Done"
 #
-# test:
-# 	@echo "Running tests..."
-# 	@go test ./... -coverprofile=coverage.out -p=1
-# 	@go tool cover -html=coverage.out -o coverage.html
-# 	@xdg-open coverage.html
-# 	@echo "Done"
+test:
+	@echo "Running tests..."
+	@go test ./... -coverprofile=coverage.out -p=1
+	@go tool cover -html=coverage.out -o coverage.html
+	@xdg-open coverage.html
+	@echo "Done"
