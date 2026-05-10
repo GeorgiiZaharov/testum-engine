@@ -2,9 +2,11 @@ package gettest
 
 import (
 	"context"
+	"errors"
 
 	"go.uber.org/zap"
 
+	lecturertestrepo "testum-engine/app/internal/repository/lecturer_test"
 	taskrepo "testum-engine/app/internal/repository/task"
 )
 
@@ -49,7 +51,9 @@ func (uc *UseCase) Execute(ctx context.Context, req GetTestRequest) (GetTestResp
 
 		// 3. Группы (EXPLICIT COPY)
 		rawGroups, err := r.LecturerTest.GetGroups(ctx, req.TestID, 0)
-		if err != nil {
+		if errors.Is(err, lecturertestrepo.ErrTestNotFound) {
+			rawGroups = []lecturertestrepo.GroupInfo{}
+		} else if err != nil {
 			uc.log.Error("failed to get groups", zap.Error(err))
 			return err
 		}
