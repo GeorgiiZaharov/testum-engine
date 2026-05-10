@@ -144,6 +144,7 @@ func Build(cfg config.Config) (*App, error) {
 		AllowedOrigins: []string{
 			"http://localhost:3000",
 			"http://localhost:5173",
+			"http://localhost:4173",
 		},
 		AllowedMethods: []string{
 			http.MethodGet,
