@@ -58,7 +58,7 @@
 ## cURL example
 
 ```bash
-curl -X POST http://localhost:8080/lecturer/tests/upload \
+curl -X POST http://localhost:8080/lecturer/tests \
   -H "Authorization: Bearer <token>" \
   -F "file=@test.txt" \
   -F "ignore_validation=true"
