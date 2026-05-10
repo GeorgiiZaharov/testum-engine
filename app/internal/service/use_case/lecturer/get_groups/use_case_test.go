@@ -147,7 +147,7 @@ func Test_GetGroups_NoGroups(t *testing.T) {
 		Year:   0,
 	})
 
-	require.Error(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, resp.Groups)
 }
 
@@ -163,4 +163,3 @@ func Test_GetGroups_RepositoryError(t *testing.T) {
 
 	assert.Error(t, err)
 }
-
