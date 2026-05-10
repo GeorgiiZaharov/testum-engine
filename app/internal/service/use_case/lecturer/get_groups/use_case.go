@@ -2,8 +2,11 @@ package getgroups
 
 import (
 	"context"
+	"errors"
 
 	"go.uber.org/zap"
+
+	lecturertestrepo "testum-engine/app/internal/repository/lecturer_test"
 )
 
 type UseCase struct {
@@ -44,7 +47,9 @@ func (uc *UseCase) Execute(ctx context.Context, req GetGroupsRequest) (GetGroups
 
 		// 2. Получение групп
 		groups, err := r.Test.GetGroups(ctx, req.TestID, req.Year)
-		if err != nil {
+		if errors.Is(err, lecturertestrepo.ErrTestNotFound) {
+			groups = []lecturertestrepo.GroupInfo{}
+		} else if err != nil {
 			uc.log.Error("failed to get groups",
 				zap.Error(err),
 				zap.Int("test_id", req.TestID),
