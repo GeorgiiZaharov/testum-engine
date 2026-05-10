@@ -64,6 +64,11 @@ func Build(cfg config.Config) (*App, error) {
 		jwtMiddleware(http.HandlerFunc(lecturerFileHandler.GetTestFile)),
 	)
 
+	mux.Handle(
+		"POST /lecturer/picture",
+		jwtMiddleware(http.HandlerFunc(lecturerFileHandler.UploadPicture)),
+	)
+
 	// Read
 	mux.Handle(
 		"GET /lecturer/tests",

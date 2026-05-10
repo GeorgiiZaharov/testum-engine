@@ -58,7 +58,7 @@ func TestUploadTest_Success(t *testing.T) {
 		},
 	}
 
-	h := New(uc, nil)
+	h := New(uc, nil, nil)
 
 	req := createMultipartRequest(t, []byte("hello world"), true)
 	req = middleware.WithUserID(req, 10)
@@ -80,7 +80,7 @@ func TestUploadTest_Success(t *testing.T) {
 }
 
 func TestUploadTest_Unauthorized(t *testing.T) {
-	h := New(&uploadTestUCStub{}, nil)
+	h := New(&uploadTestUCStub{}, nil, nil)
 
 	req := createMultipartRequest(t, []byte("data"), false)
 
@@ -92,7 +92,7 @@ func TestUploadTest_Unauthorized(t *testing.T) {
 }
 
 func TestUploadTest_InvalidMultipart(t *testing.T) {
-	h := New(&uploadTestUCStub{}, nil)
+	h := New(&uploadTestUCStub{}, nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/lecturer/tests/upload", bytes.NewReader([]byte("broken")))
 	req.Header.Set("Content-Type", "multipart/form-data")
@@ -116,7 +116,7 @@ func TestUploadTest_FileRequired(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req = middleware.WithUserID(req, 10)
 
-	h := New(&uploadTestUCStub{}, nil)
+	h := New(&uploadTestUCStub{}, nil, nil)
 
 	rec := httptest.NewRecorder()
 
@@ -161,7 +161,7 @@ func TestUploadTest_UseCaseErrors(t *testing.T) {
 				},
 			}
 
-			h := New(uc, nil)
+			h := New(uc, nil, nil)
 
 			req := createMultipartRequest(t, []byte("data"), false)
 			req = middleware.WithUserID(req, 10)
@@ -178,4 +178,3 @@ func TestUploadTest_UseCaseErrors(t *testing.T) {
 func ptr(i int) *int {
 	return &i
 }
-

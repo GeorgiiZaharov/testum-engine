@@ -88,3 +88,15 @@ GetTestResultUseCase(StudentTestRepository)
 ```
 DeleteAttemptUseCase(TestRepository)
 ```
+
+## **POST /lecturer/picture + jwt**
+
+**file**: `picture`
+**resp**: `createpictureresponse`
+
+загружает изображение на сервер.
+
+```
+uploadpictureusecase(userrepository, storageadapter)
+```
+

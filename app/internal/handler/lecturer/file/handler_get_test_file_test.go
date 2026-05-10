@@ -60,7 +60,7 @@ func TestGetTestFile_Success(t *testing.T) {
 	// =========================
 	// 3. HANDLER
 	// =========================
-	h := New(nil, uc)
+	h := New(nil, uc, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/lecturer/test/99/file", nil)
 	req.SetPathValue("test_id", "99")
@@ -87,7 +87,7 @@ func TestGetTestFile_Success(t *testing.T) {
 }
 
 func TestGetTestFile_Unauthorized(t *testing.T) {
-	h := New(nil, &getFileUCStub{})
+	h := New(nil, &getFileUCStub{}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/lecturer/test/99/file", nil)
 
@@ -99,7 +99,7 @@ func TestGetTestFile_Unauthorized(t *testing.T) {
 }
 
 func TestGetTestFile_InvalidID(t *testing.T) {
-	h := New(nil, &getFileUCStub{})
+	h := New(nil, &getFileUCStub{}, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/lecturer/test/xx/file", nil)
 	req.SetPathValue("test_id", "xx")
@@ -131,7 +131,7 @@ func TestGetTestFile_UseCaseErrors(t *testing.T) {
 				},
 			}
 
-			h := New(nil, uc)
+			h := New(nil, uc, nil)
 
 			req := httptest.NewRequest(http.MethodGet, "/lecturer/test/99/file", nil)
 			req.SetPathValue("test_id", "99")
@@ -165,7 +165,7 @@ func TestGetTestFile_FileStatError(t *testing.T) {
 		},
 	}
 
-	h := New(nil, uc)
+	h := New(nil, uc, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/lecturer/test/99/file", nil)
 	req.SetPathValue("test_id", "99")

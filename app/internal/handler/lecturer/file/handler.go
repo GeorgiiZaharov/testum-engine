@@ -11,6 +11,7 @@ import (
 	"testum-engine/app/internal/handler/middleware"
 
 	getfile "testum-engine/app/internal/service/use_case/lecturer/get_test_file"
+	uploadpicture "testum-engine/app/internal/service/use_case/lecturer/upload_picture"
 	uploadtest "testum-engine/app/internal/service/use_case/lecturer/upload_test"
 
 	"testum-engine/app/internal/handler/lecturer/file/dto"
@@ -28,19 +29,25 @@ type GetTestFileUseCase interface {
 	Execute(ctx context.Context, req getfile.GetTestFileRequest) (getfile.GetTestFileResponse, error)
 }
 
+type UploadPictureUseCase interface {
+	Execute(ctx context.Context, req uploadpicture.UploadPictureRequest) (uploadpicture.UploadPictureResponse, error)
+}
+
 //
 // HANDLER
 //
 
 type Handler struct {
-	uploadUC UploadTestUseCase
-	fileUC   GetTestFileUseCase
+	uploadTestUC    UploadTestUseCase
+	getTestFileUC   GetTestFileUseCase
+	uploadPictureUC UploadPictureUseCase
 }
 
-func New(uploadUC UploadTestUseCase, fileUC GetTestFileUseCase) *Handler {
+func New(uploadUC UploadTestUseCase, fileUC GetTestFileUseCase, uploadPictureUC UploadPictureUseCase) *Handler {
 	return &Handler{
-		uploadUC: uploadUC,
-		fileUC:   fileUC,
+		uploadTestUC:    uploadUC,
+		getTestFileUC:   fileUC,
+		uploadPictureUC: uploadPictureUC,
 	}
 }
 
@@ -69,7 +76,7 @@ func parseTestID(r *http.Request) (int, error) {
 // ERROR MAPPING (UPLOAD)
 //
 
-func mapUploadError(err error) (int, string) {
+func mapUploadTestError(err error) (int, string) {
 	switch {
 	case errors.Is(err, uploadtest.ErrInvalidInput):
 		return http.StatusBadRequest, "invalid input"
@@ -77,6 +84,19 @@ func mapUploadError(err error) (int, string) {
 		return http.StatusForbidden, "access denied"
 	case errors.Is(err, uploadtest.ErrStorageFailed):
 		return http.StatusInternalServerError, "internal server error"
+	default:
+		return http.StatusInternalServerError, "internal server error"
+	}
+}
+
+func mapUploadPictureError(err error) (int, string) {
+	switch {
+	case errors.Is(err, uploadpicture.ErrInvalidInput):
+		return http.StatusBadRequest, "invalid input"
+	case errors.Is(err, uploadpicture.ErrAccessDenied):
+		return http.StatusForbidden, "access denied"
+	case errors.Is(err, uploadpicture.ErrStorageFailed):
+		return http.StatusInternalServerError, "storage failed"
 	default:
 		return http.StatusInternalServerError, "internal server error"
 	}
@@ -130,14 +150,14 @@ func (h *Handler) UploadTest(w http.ResponseWriter, r *http.Request) {
 
 	ignoreValidation := r.FormValue("ignore_validation") == "true"
 
-	res, err := h.uploadUC.Execute(r.Context(), uploadtest.UploadTestRequest{
+	res, err := h.uploadTestUC.Execute(r.Context(), uploadtest.UploadTestRequest{
 		UserID:           userID,
 		File:             bytes,
 		FileName:         header.Filename,
 		IgnoreValidation: ignoreValidation,
 	})
 	if err != nil {
-		code, msg := mapUploadError(err)
+		code, msg := mapUploadTestError(err)
 		writeError(w, code, msg)
 		return
 	}
@@ -162,7 +182,7 @@ func (h *Handler) GetTestFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.fileUC.Execute(r.Context(), getfile.GetTestFileRequest{
+	res, err := h.getTestFileUC.Execute(r.Context(), getfile.GetTestFileRequest{
 		UserID: userID,
 		TestID: testID,
 	})
@@ -185,4 +205,47 @@ func (h *Handler) GetTestFile(w http.ResponseWriter, r *http.Request) {
 
 	// Serve content with file info
 	http.ServeContent(w, r, res.File.Name(), fileInfo.ModTime(), res.File)
+}
+
+func (h *Handler) UploadPicture(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// multipart form
+	err := r.ParseMultipartForm(32 << 20) // 32 MB
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid multipart data")
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "file is required")
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid file")
+		return
+	}
+
+	// Выполнение use case
+	res, err := h.uploadPictureUC.Execute(r.Context(), uploadpicture.UploadPictureRequest{
+		UserID:   userID,
+		File:     bytes,
+		FileName: header.Filename,
+	})
+
+	if err != nil {
+		code, msg := mapUploadPictureError(err)
+		writeError(w, code, msg)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, res)
 }

@@ -95,3 +95,12 @@ StudentResult: {
 ```
 
 ---
+
+## CreatePictureResponse
+
+Результат сохранения изображения.
+```text
+CreatePictureResponse: {
+    url: str
+}
+```

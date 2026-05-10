@@ -113,3 +113,46 @@ curl -X GET http://localhost:8080/lecturer/tests/123/file \
   -H "Authorization: Bearer <token>" \
   --output test_file
 ```
+
+## Endpoint summary
+
+*Method: POST`
+* URL: `/lecturer/picture`*
+**Auth:** Required  
+**Description:** Uploads a profile picture for a lecturer.
+
+### Request
+
+`multipart/form-data`
+
+| Field   | Type | Required | Description       |
+| ------- | ---- | -------- | ---------------- |
+| picture | file | yes      | Image file content |
+
+### Response
+
+**Success (HTTP 200)**
+
+```json
+{
+  "url": "http://localhost/lecturer1/picture.png",
+  "success": true
+}
+````
+
+### Errors
+
+* 400 — invalid multipart data
+* 400 — file is required
+* 400 — invalid file
+* 401 — unauthorized
+* 403 — access denied
+* 500 — internal server error
+
+### cURL Example
+
+```bash
+curl -X POST http://localhost:8080/lecturer/picture \
+  -H "Authorization: Bearer <token>" \
+  -F "picture=@profile.png"
+```

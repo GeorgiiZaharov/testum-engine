@@ -15,3 +15,7 @@ type UploadTestResponse struct {
 	TestID           *int              `json:"test_id"`
 	Success          bool              `json:"success"`
 }
+
+type UploadPictureResponse struct {
+	Url string `json:"url"`
+}

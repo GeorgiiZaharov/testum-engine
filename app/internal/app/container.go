@@ -17,8 +17,9 @@ import (
 )
 
 type Container struct {
-	Logger *zap.Logger
-	DB     *db.DB
+	Logger         *zap.Logger
+	DB             *db.DB
+	BasePictureURL string
 
 	// adapters
 	LDAP    *ldapadap.LdapAdapter
@@ -84,6 +85,8 @@ func NewContainer(cfg config.Config) (*Container, error) {
 	return &Container{
 		Logger: logger,
 		DB:     database,
+
+		BasePictureURL: cfg.App.PictureBaseURL,
 
 		LDAP:    &ldapAdapter,
 		Storage: storageAdapter,
