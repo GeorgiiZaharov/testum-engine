@@ -5,6 +5,8 @@ MAIN_GO := ./app/cmd/testum/main.go
 build:
 	docker compose up --build -d
 	
+clear:
+	docker compose down --volumes --remove-orphans
 
 # .PHONY: build clear
 

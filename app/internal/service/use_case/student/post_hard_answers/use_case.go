@@ -9,8 +9,9 @@ import (
 	answerrepo "testum-engine/app/internal/repository/answer"
 	studenttestrepo "testum-engine/app/internal/repository/student_test"
 
-	"go.uber.org/zap"
 	resultrepo "testum-engine/app/internal/repository/result"
+
+	"go.uber.org/zap"
 )
 
 type UseCase struct {
@@ -109,6 +110,7 @@ func (uc *UseCase) Execute(
 			convertAnswerRepoToService(trueAnswers),
 		)
 		if err != nil {
+			uc.log.Error("faild to check answers", zap.Error(err))
 			return ErrAnswerCheckFailed
 		}
 
@@ -144,6 +146,7 @@ func (uc *UseCase) Execute(
 	})
 
 	if err != nil {
+		uc.log.Error("faild to post hard answers", zap.Error(err))
 		return PostHardAnswersResponse{}, err
 	}
 
