@@ -55,7 +55,8 @@ services:
 
     ports:
       - "${APP_PORT}:${APP_PORT}"
-
+    volumes:
+      - ./app_data:/app/data
     depends_on:
       mysql:
         condition: service_healthy
