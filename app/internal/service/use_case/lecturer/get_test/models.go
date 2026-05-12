@@ -35,10 +35,11 @@ type GroupInfo struct {
 }
 
 type Task struct {
-	Text     string
-	ImageURL *string
-	IsHard   bool
-	Answers  []Answer
+	Text             string
+	ImageURL         *string
+	IsHard           bool
+	IsMultipleChoice bool
+	Answers          []Answer
 }
 
 type Answer struct {

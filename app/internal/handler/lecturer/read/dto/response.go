@@ -31,10 +31,11 @@ type Group struct {
 }
 
 type Task struct {
-	Text    string   `json:"text"`
-	Image   *string  `json:"image,omitempty"`
-	Answers []Answer `json:"answers"`
-	IsHard  bool     `json:"is_hard"`
+	Text             string   `json:"text"`
+	Image            *string  `json:"image,omitempty"`
+	Answers          []Answer `json:"answers"`
+	IsHard           bool     `json:"is_hard"`
+	IsMultipleChoice bool     `json:"is_multiple_choice"`
 }
 
 type Answer struct {

@@ -46,19 +46,21 @@ func ToGetTest(res gettest.GetTestResponse) GetTestResponse {
 
 	for _, t := range res.HardTasks {
 		hard = append(hard, Task{
-			Text:    t.Text,
-			Image:   t.ImageURL,
-			IsHard:  t.IsHard,
-			Answers: toAnswers(t.Answers),
+			Text:             t.Text,
+			Image:            t.ImageURL,
+			IsHard:           t.IsHard,
+			IsMultipleChoice: t.IsMultipleChoice,
+			Answers:          toAnswers(t.Answers),
 		})
 	}
 
 	for _, t := range res.BaseTasks {
 		base = append(base, Task{
-			Text:    t.Text,
-			Image:   t.ImageURL,
-			IsHard:  t.IsHard,
-			Answers: toAnswers(t.Answers),
+			Text:             t.Text,
+			Image:            t.ImageURL,
+			IsHard:           t.IsHard,
+			IsMultipleChoice: t.IsMultipleChoice,
+			Answers:          toAnswers(t.Answers),
 		})
 	}
 

@@ -76,10 +76,11 @@ func (uc *UseCase) Execute(ctx context.Context, req GetTestRequest) (GetTestResp
 		hardTasks := make([]Task, 0, len(rawHardTasks))
 		for _, t := range rawHardTasks {
 			hardTasks = append(hardTasks, Task{
-				Text:     t.Text,
-				ImageURL: t.ImageURL,
-				IsHard:   t.IsHard,
-				Answers:  mapAnswers(t.Answers),
+				Text:             t.Text,
+				ImageURL:         t.ImageURL,
+				IsHard:           t.IsHard,
+				IsMultipleChoice: isMultipleChoice(t.Answers),
+				Answers:          mapAnswers(t.Answers),
 			})
 		}
 
@@ -93,10 +94,11 @@ func (uc *UseCase) Execute(ctx context.Context, req GetTestRequest) (GetTestResp
 		baseTasks := make([]Task, 0, len(rawBaseTasks))
 		for _, t := range rawBaseTasks {
 			baseTasks = append(baseTasks, Task{
-				Text:     t.Text,
-				ImageURL: t.ImageURL,
-				IsHard:   t.IsHard,
-				Answers:  mapAnswers(t.Answers),
+				Text:             t.Text,
+				ImageURL:         t.ImageURL,
+				IsHard:           t.IsHard,
+				IsMultipleChoice: isMultipleChoice(t.Answers),
+				Answers:          mapAnswers(t.Answers),
 			})
 		}
 
@@ -132,4 +134,16 @@ func mapAnswers(raw []taskrepo.Answer) []Answer {
 	}
 
 	return res
+}
+
+func isMultipleChoice(raw []taskrepo.Answer) bool {
+	cntTrueAnswers := 0
+
+	for _, a := range raw {
+		if a.IsCorrect {
+			cntTrueAnswers += 1
+		}
+	}
+
+	return cntTrueAnswers > 1
 }

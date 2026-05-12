@@ -90,7 +90,8 @@ curl -X GET http://localhost:8080/lecturer/tests \
           "is_correct": true
         }
       ],
-      "is_hard": true
+      "is_hard": true,
+      "is_multiple_choice": true
     }
   ],
   "base_tasks": [
@@ -104,7 +105,8 @@ curl -X GET http://localhost:8080/lecturer/tests \
           "is_correct": true
         }
       ],
-      "is_hard": false
+      "is_hard": false,
+      "is_multiple_choice": true
     }
   ]
 }
