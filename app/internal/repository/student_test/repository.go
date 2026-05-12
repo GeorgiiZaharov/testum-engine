@@ -29,15 +29,20 @@ func NewRepository(db db.Executor, log *zap.Logger) Repository {
 // ==================== START TEST ====================
 func (r *repository) StartTest(ctx context.Context, params StartTestParams) (bool, error) {
 	query := `
-		insert into student_tests (student_id, test_id, ` + "`group`" + `, date_start)
-		values (?, ?, ?, now())
-		on duplicate key update student_id = student_id
+		INSERT INTO student_tests (student_id, test_id, ` + "`group`" + `, date_start)
+		VALUES (
+			?, 
+			?, 
+			(SELECT ` + "`group`" + ` FROM users WHERE id = ?), 
+			NOW()
+		)
+		ON DUPLICATE KEY UPDATE student_id = student_id
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		params.UserID,
 		params.TestID,
-		params.Group,
+		params.UserID, // для подзапроса
 	)
 
 	if err != nil {

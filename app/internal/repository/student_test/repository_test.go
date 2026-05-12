@@ -64,7 +64,6 @@ func TestStartTest_HappyPath(t *testing.T) {
 	ok, err := env.repo.StartTest(env.ctx, StartTestParams{
 		UserID: 1,
 		TestID: 1,
-		Group:  "A-101",
 	})
 
 	assert.NoError(t, err)

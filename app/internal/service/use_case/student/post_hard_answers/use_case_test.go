@@ -70,7 +70,7 @@ func Test_PostHardAnswers_AllCorrect_ShouldFinishTest(t *testing.T) {
 
 	resp, err := env.uc.Execute(env.ctx, userID, testID, answers)
 
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.True(t, resp.IsAllCorrect)
 }
 

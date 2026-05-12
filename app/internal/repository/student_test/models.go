@@ -7,7 +7,6 @@ import "time"
 type StartTestParams struct {
 	UserID int
 	TestID int
-	Group  string
 }
 
 type FinishTestParams struct {

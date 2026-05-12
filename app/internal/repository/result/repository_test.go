@@ -96,7 +96,7 @@ func TestGetStudentResult_HappyPath_WithNullDateEnd(t *testing.T) {
 func TestGetStudentResult_NotFound(t *testing.T) {
 	env := setup(t)
 
-	_, err := env.repo.GetStudentResult(env.ctx, 1, 1)
+	_, err := env.repo.GetStudentResult(env.ctx, 1, 2)
 
 	require.Error(t, err)
 	assert.Equal(t, ErrResultNotFound, err)
@@ -140,7 +140,7 @@ func TestGetGroupResult_CurrentAcademicYear_NullsAndValues(t *testing.T) {
 			student1 = true
 			assert.Nil(t, r.Mark)
 			assert.Nil(t, r.SuccessRate)
-			assert.Nil(t, r.DateStart)
+			assert.NotNil(t, r.DateStart)
 			assert.Nil(t, r.DateEnd)
 
 		case "student2":

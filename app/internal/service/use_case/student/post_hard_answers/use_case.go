@@ -2,14 +2,11 @@ package posthardanswers
 
 import (
 	"context"
-	"errors"
 
 	answercheckserv "testum-engine/app/internal/service/core/answer"
 
 	answerrepo "testum-engine/app/internal/repository/answer"
 	studenttestrepo "testum-engine/app/internal/repository/student_test"
-
-	resultrepo "testum-engine/app/internal/repository/result"
 
 	"go.uber.org/zap"
 )
@@ -62,27 +59,9 @@ func (uc *UseCase) Execute(
 			return ErrAccessDenied
 		}
 
-		user, err := r.User.GetByID(ctx, userID)
-		if err != nil {
-			return err
-		}
-		if user.Group == nil {
-			return ErrAccessDenied
-		}
-
 		_, err = r.Result.GetStudentResult(ctx, userID, testID)
 
-		if errors.Is(err, resultrepo.ErrResultNotFound) {
-			ok, err := r.StudentTest.StartTest(ctx, studenttestrepo.StartTestParams{
-				UserID: userID,
-				TestID: testID,
-				Group:  *user.Group,
-			})
-			if err != nil || !ok {
-				uc.log.Error("start test failed", zap.Error(err))
-				return err
-			}
-		} else if err != nil {
+		if err != nil {
 			uc.log.Error("get student result failed", zap.Error(err))
 			return err
 		}

@@ -12,7 +12,6 @@ import (
 	answerrepo "testum-engine/app/internal/repository/answer"
 	resultrepo "testum-engine/app/internal/repository/result"
 	studenttestrepo "testum-engine/app/internal/repository/student_test"
-	userrepo "testum-engine/app/internal/repository/user"
 )
 
 type factory struct {
@@ -30,7 +29,6 @@ func NewFactory(db *db.DB, log *zap.Logger) repoFactory {
 func (f *factory) WithTx(ctx context.Context, fn func(r repositories) error) error {
 	return f.db.WithTx(ctx, func(tx *sql.Tx) error {
 		repos := repositories{
-			User:        userrepo.NewRepository(tx, f.log),
 			Access:      accessrepo.NewRepository(tx, f.log),
 			Answer:      answerrepo.NewRepository(tx, f.log),
 			Result:      resultrepo.NewRepository(tx, f.log),

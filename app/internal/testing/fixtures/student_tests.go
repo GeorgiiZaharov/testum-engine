@@ -63,6 +63,16 @@ func (m *Manager) seedStudentTests(ctx context.Context) error {
 			DateStart: finished,
 			DateEnd:   &now,
 		},
+		{
+			ID:        4,
+			StudentID: 1,
+			TestID:    1,
+			Mark:      nil,
+			Group:     "A-101",
+			Success:   nil,
+			DateStart: now,
+			DateEnd:   nil,
+		},
 	}
 
 	query := `
