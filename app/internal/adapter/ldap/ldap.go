@@ -147,7 +147,13 @@ func (l *ldapAdapter) ValidatePassword(ctx context.Context, login, password stri
 	if login == "lector" && password == "123456" { // TODO:
 		return nil
 	}
-	if login == "student" && password == "123456" { //TODO:
+	if login == "student1" && password == "123456" { //TODO:
+		return nil
+	}
+	if login == "student2" && password == "123456" { //TODO:
+		return nil
+	}
+	if login == "student3" && password == "123456" { //TODO:
 		return nil
 	}
 	if login == "" || password == "" {
@@ -225,12 +231,30 @@ func (l *ldapAdapter) ValidatePassword(ctx context.Context, login, password stri
 // =========================
 
 func (l *ldapAdapter) GetInfo(ctx context.Context, login string) (*LdapUserInfo, error) {
-	if login == "student" { // TODO:
+	if login == "student1" { // TODO:
 		group := "22307"
 		return &LdapUserInfo{
-			Login: "student",
-			Name:  "Student Student",
-			Mail:  "student@mail.ru",
+			Login: "student1",
+			Name:  "Student First",
+			Mail:  "student1@mail.ru",
+			Group: &group,
+		}, nil
+	}
+	if login == "student2" { // TODO:
+		group := "22307"
+		return &LdapUserInfo{
+			Login: "student2",
+			Name:  "Student Second",
+			Mail:  "student2@mail.ru",
+			Group: &group,
+		}, nil
+	}
+	if login == "student3" { // TODO:
+		group := "22306"
+		return &LdapUserInfo{
+			Login: "student3",
+			Name:  "Student Third",
+			Mail:  "student3@mail.ru",
 			Group: &group,
 		}, nil
 	}
