@@ -241,7 +241,7 @@ func TestUploadPicture(t *testing.T) {
 		name, err := adapter.UploadPicture(bytes.NewBufferString("img"), "pic.png", "user1")
 
 		assert.NoError(t, err)
-		assert.Equal(t, expectedName, name)
+		assert.Equal(t, "user1/"+expectedName, name)
 	})
 
 	t.Run("invalid filename", func(t *testing.T) {

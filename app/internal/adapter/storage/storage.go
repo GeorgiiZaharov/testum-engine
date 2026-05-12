@@ -190,7 +190,7 @@ func (s *StorageAdapter) UploadPicture(file io.Reader, fileName string, login st
 		return "", err
 	}
 
-	return newName, nil
+	return login + "/" + newName, nil
 }
 
 // DeletePictures удаляет ВСЮ папку пользователя
