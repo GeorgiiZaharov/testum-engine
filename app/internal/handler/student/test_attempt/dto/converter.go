@@ -76,7 +76,7 @@ func convertHardTasks(
 			Text:             t.Text,
 			ImageURL:         t.ImageURL,
 			IsHard:           t.IsHard,
-			IsMultipleChoise: t.IsMultipleChoice,
+			IsMultipleChoice: t.IsMultipleChoice,
 			Answers:          convertHardAnswers(t.Answers),
 		})
 	}
@@ -95,7 +95,7 @@ func convertBaseTasks(
 			Text:             t.Text,
 			ImageURL:         t.ImageURL,
 			IsHard:           t.IsHard,
-			IsMultipleChoise: t.IsMultipleChoice,
+			IsMultipleChoice: t.IsMultipleChoice,
 			Answers:          convertBaseAnswers(t.Answers),
 		})
 	}

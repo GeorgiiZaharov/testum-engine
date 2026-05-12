@@ -9,7 +9,7 @@ type TaskResponse struct {
 	Text             string           `json:"text"`
 	ImageURL         *string          `json:"image_url,omitempty"`
 	IsHard           bool             `json:"is_hard"`
-	IsMultipleChoise bool             `json:"is_multiple_choise"`
+	IsMultipleChoice bool             `json:"is_multiple_choice"`
 	Answers          []AnswerResponse `json:"answers"`
 }
 
