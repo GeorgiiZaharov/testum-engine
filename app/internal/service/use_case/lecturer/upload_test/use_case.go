@@ -91,13 +91,14 @@ func (uc *UseCase) Execute(ctx context.Context, req UploadTestRequest) (UploadTe
 		}
 
 		// 5. Upload файла
-		if err := uc.storage.UploadFile(bytes.NewReader(req.File), req.FileName); err != nil {
+		fileName, err := uc.storage.UploadFile(bytes.NewReader(req.File), req.FileName)
+		if err != nil {
 			uc.log.Error("failed to upload file", zap.Error(err))
 			return ErrStorageFailed
 		}
 
 		// 6. Маппинг в repo DTO
-		test := mapToRepoTest(testFromFile, req.FileName)
+		test := mapToRepoTest(testFromFile, fileName)
 
 		// 7. Сохранение теста
 		testID, err := r.Test.Create(ctx, req.UserID, test)

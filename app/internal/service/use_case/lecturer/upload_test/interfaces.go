@@ -20,7 +20,7 @@ type lecturerTestRepository interface {
 }
 
 type storageAdapter interface {
-	UploadFile(file io.Reader, fileName string) error
+	UploadFile(file io.Reader, fileName string) (string, error)
 }
 
 type fileValidationService interface {

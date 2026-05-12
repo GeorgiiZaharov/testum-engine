@@ -3,6 +3,8 @@ package uploadtest
 import (
 	"context"
 	"io"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,7 +52,7 @@ func setup(t *testing.T) *testEnv {
 
 	uc := NewUseCase(
 		NewFactory(database, zap.NewNop()),
-		&realStorage{},
+		&fakeStorage{},
 		validation.NewParser(zap.NewNop()),
 		latexvalidator.New(),
 		zap.NewNop(),
@@ -66,10 +68,15 @@ func setup(t *testing.T) *testEnv {
 // STORAGE MOCK
 // =========================
 
-type realStorage struct{}
+type fakeStorage struct{}
 
-func (r *realStorage) UploadFile(file io.Reader, fileName string) error {
-	return nil
+func (s *fakeStorage) UploadFile(file io.Reader, fileName string) (string, error) {
+	salt := "abc123"
+
+	ext := filepath.Ext(fileName)
+	name := strings.TrimSuffix(fileName, ext)
+
+	return name + "_" + salt + ext, nil
 }
 
 // =========================

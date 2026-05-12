@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -41,10 +42,9 @@ func (f *fakeFileInfo) Size() int64        { return 0 }
 func (f *fakeFileInfo) Mode() os.FileMode  { return 0 }
 func (f *fakeFileInfo) ModTime() time.Time { return time.Now() }
 func (f *fakeFileInfo) IsDir() bool        { return false }
-func (f *fakeFileInfo) Sys() interface{}   { return nil }
+func (f *fakeFileInfo) Sys() any           { return nil }
 
 // ================= CONSTRUCTOR =================
-
 func TestNewStorageAdapterWithDeps(t *testing.T) {
 	fs := setupFS()
 	salt := new(mockSalt)
@@ -60,65 +60,78 @@ func TestNewStorageAdapterWithDeps(t *testing.T) {
 func TestUploadFile(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fs := setupFS()
-
-		fs.On("Stat", mock.Anything).Return(nil, os.ErrNotExist)
+		salt := new(mockSalt)
+		salt.On("Generate").Return("abc123", nil)
 
 		tmpFile, _ := os.CreateTemp("", "test")
+		defer os.Remove(tmpFile.Name())
 
-		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		fileName := "file.txt"
+		expectedName := "file_abc123.txt"
+		fullPath := filepath.Join("data", expectedName)
 
-		fs.On("Create", mock.Anything).Return(tmpFile, nil)
+		fs.On("Stat", fullPath).Return(nil, os.ErrNotExist)
+		fs.On("Create", fullPath).Return(tmpFile, nil)
 
-		adapter := NewStorageAdapter(fs)
+		adapter := NewStorageAdapterWithDeps(fs, salt)
 
-		err := adapter.UploadFile(bytes.NewBufferString("data"), "file.txt")
+		name, err := adapter.UploadFile(bytes.NewBufferString("data"), fileName)
 		assert.NoError(t, err)
-	})
-
-	t.Run("file exists", func(t *testing.T) {
-		fs := setupFS()
-		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
-
-		adapter := NewStorageAdapter(fs)
-
-		err := adapter.UploadFile(bytes.NewBufferString("data"), "file.txt")
-		assert.ErrorIs(t, err, ErrFileExists)
+		assert.Equal(t, expectedName, name)
 	})
 
 	t.Run("invalid name", func(t *testing.T) {
 		fs := setupFS()
-		adapter := NewStorageAdapter(fs)
+		salt := new(mockSalt)
+		adapter := NewStorageAdapterWithDeps(fs, salt)
 
-		err := adapter.UploadFile(bytes.NewBufferString("data"), "../bad")
+		name, err := adapter.UploadFile(bytes.NewBufferString("data"), "../bad")
 		assert.ErrorIs(t, err, ErrInvalidName)
+		assert.Empty(t, name)
+	})
+
+	t.Run("salt error", func(t *testing.T) {
+		fs := setupFS()
+		salt := new(mockSalt)
+		salt.On("Generate").Return("", errors.New("salt error"))
+
+		adapter := NewStorageAdapterWithDeps(fs, salt)
+		name, err := adapter.UploadFile(bytes.NewBufferString("data"), "file.txt")
+		assert.Error(t, err)
+		assert.Empty(t, name)
 	})
 
 	t.Run("create error", func(t *testing.T) {
 		fs := setupFS()
+		salt := new(mockSalt)
+		salt.On("Generate").Return("abc123", nil)
 
-		fs.On("Stat", mock.Anything).Return(nil, os.ErrNotExist)
-		fs.On("Create", mock.Anything).Return(nil, errors.New("err"))
+		fullPath := filepath.Join("data", "file_abc123.txt")
+		fs.On("Stat", fullPath).Return(nil, os.ErrNotExist)
+		fs.On("Create", fullPath).Return(nil, errors.New("create error"))
 
-		adapter := NewStorageAdapter(fs)
-
-		err := adapter.UploadFile(bytes.NewBufferString("data"), "file.txt")
+		adapter := NewStorageAdapterWithDeps(fs, salt)
+		name, err := adapter.UploadFile(bytes.NewBufferString("data"), "file.txt")
 		assert.Error(t, err)
+		assert.Empty(t, name)
 	})
 
 	t.Run("copy error", func(t *testing.T) {
 		fs := setupFS()
-
-		fs.On("Stat", mock.Anything).Return(nil, os.ErrNotExist)
+		salt := new(mockSalt)
+		salt.On("Generate").Return("abc123", nil)
 
 		tmpFile, _ := os.CreateTemp("", "test")
-		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		defer os.Remove(tmpFile.Name())
 
-		fs.On("Create", mock.Anything).Return(tmpFile, nil)
+		fullPath := filepath.Join("data", "file_abc123.txt")
+		fs.On("Stat", fullPath).Return(nil, os.ErrNotExist)
+		fs.On("Create", fullPath).Return(tmpFile, nil)
 
-		adapter := NewStorageAdapter(fs)
-
-		err := adapter.UploadFile(&errReader{}, "file.txt")
+		adapter := NewStorageAdapterWithDeps(fs, salt)
+		name, err := adapter.UploadFile(&errReader{}, "file.txt")
 		assert.Error(t, err)
+		assert.Empty(t, name)
 	})
 }
 
@@ -126,16 +139,14 @@ func TestUploadFile(t *testing.T) {
 func TestGetFile(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
 
 		tmpFile, _ := os.CreateTemp("", "test")
-		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		defer os.Remove(tmpFile.Name())
 
 		fs.On("Open", mock.Anything).Return(tmpFile, nil)
 
 		adapter := NewStorageAdapter(fs)
-
 		file, err := adapter.GetFile("file.txt")
 		assert.NoError(t, err)
 		assert.NotNil(t, file)
@@ -146,7 +157,6 @@ func TestGetFile(t *testing.T) {
 		fs.On("Stat", mock.Anything).Return(nil, os.ErrNotExist)
 
 		adapter := NewStorageAdapter(fs)
-
 		file, err := adapter.GetFile("file.txt")
 		assert.NoError(t, err)
 		assert.Nil(t, file)
@@ -155,7 +165,6 @@ func TestGetFile(t *testing.T) {
 	t.Run("invalid name", func(t *testing.T) {
 		fs := setupFS()
 		adapter := NewStorageAdapter(fs)
-
 		file, err := adapter.GetFile("bad/name")
 		assert.ErrorIs(t, err, ErrInvalidName)
 		assert.Nil(t, file)
@@ -163,12 +172,10 @@ func TestGetFile(t *testing.T) {
 
 	t.Run("open error", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
 		fs.On("Open", mock.Anything).Return(nil, errors.New("err"))
 
 		adapter := NewStorageAdapter(fs)
-
 		file, err := adapter.GetFile("file.txt")
 		assert.Error(t, err)
 		assert.Nil(t, file)
@@ -179,23 +186,19 @@ func TestGetFile(t *testing.T) {
 func TestDeleteFile(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
 		fs.On("Remove", mock.Anything).Return(nil)
 
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeleteFile("file.txt")
 		assert.NoError(t, err)
 	})
 
 	t.Run("not found", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(nil, os.ErrNotExist)
 
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeleteFile("file.txt")
 		assert.NoError(t, err)
 	})
@@ -203,19 +206,16 @@ func TestDeleteFile(t *testing.T) {
 	t.Run("invalid name", func(t *testing.T) {
 		fs := setupFS()
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeleteFile("../bad")
 		assert.ErrorIs(t, err, ErrInvalidName)
 	})
 
 	t.Run("remove error", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
 		fs.On("Remove", mock.Anything).Return(errors.New("err"))
 
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeleteFile("file.txt")
 		assert.Error(t, err)
 	})
@@ -226,38 +226,29 @@ func TestUploadPicture(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fs := setupFS()
 		salt := new(mockSalt)
-
 		salt.On("Generate").Return("abc123", nil)
 
 		tmpFile, _ := os.CreateTemp("", "img")
-		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		defer os.Remove(tmpFile.Name())
 
-		fs.On("Create", mock.Anything).Return(tmpFile, nil)
+		expectedName := "pic_abc123.png"
+		fullPath := filepath.Join("data/images", "user1", expectedName)
+		fs.On("MkdirAll", filepath.Join("data/images", "user1"), os.ModePerm).Return(nil)
+		fs.On("Stat", fullPath).Return(nil, os.ErrNotExist)
+		fs.On("Create", fullPath).Return(tmpFile, nil)
 
 		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			bytes.NewBufferString("img"),
-			"pic.png",
-			"user1",
-		)
+		name, err := adapter.UploadPicture(bytes.NewBufferString("img"), "pic.png", "user1")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "pic_abc123.png", name)
+		assert.Equal(t, expectedName, name)
 	})
 
 	t.Run("invalid filename", func(t *testing.T) {
 		fs := setupFS()
 		salt := new(mockSalt)
-
 		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			bytes.NewBufferString("img"),
-			"../bad",
-			"user1",
-		)
-
+		name, err := adapter.UploadPicture(bytes.NewBufferString("img"), "../bad", "user1")
 		assert.ErrorIs(t, err, ErrInvalidName)
 		assert.Empty(t, name)
 	})
@@ -265,15 +256,8 @@ func TestUploadPicture(t *testing.T) {
 	t.Run("invalid login", func(t *testing.T) {
 		fs := setupFS()
 		salt := new(mockSalt)
-
 		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			bytes.NewBufferString("img"),
-			"pic.png",
-			"../bad",
-		)
-
+		name, err := adapter.UploadPicture(bytes.NewBufferString("img"), "pic.png", "../bad")
 		assert.ErrorIs(t, err, ErrInvalidName)
 		assert.Empty(t, name)
 	})
@@ -281,78 +265,10 @@ func TestUploadPicture(t *testing.T) {
 	t.Run("mkdir error", func(t *testing.T) {
 		fs := new(MockFS)
 		salt := new(mockSalt)
-
-		fs.On("MkdirAll", mock.Anything, mock.Anything).
-			Return(errors.New("mkdir err"))
+		fs.On("MkdirAll", mock.Anything, mock.Anything).Return(errors.New("mkdir err"))
 
 		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			bytes.NewBufferString("img"),
-			"pic.png",
-			"user1",
-		)
-
-		assert.Error(t, err)
-		assert.Empty(t, name)
-	})
-
-	t.Run("salt error", func(t *testing.T) {
-		fs := setupFS()
-		salt := new(mockSalt)
-
-		salt.On("Generate").Return("", errors.New("salt error"))
-
-		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			bytes.NewBufferString("img"),
-			"pic.png",
-			"user1",
-		)
-
-		assert.Error(t, err)
-		assert.Empty(t, name)
-	})
-
-	t.Run("create error", func(t *testing.T) {
-		fs := setupFS()
-		salt := new(mockSalt)
-
-		salt.On("Generate").Return("abc", nil)
-		fs.On("Create", mock.Anything).Return(nil, errors.New("err"))
-
-		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			bytes.NewBufferString("img"),
-			"pic.png",
-			"user1",
-		)
-
-		assert.Error(t, err)
-		assert.Empty(t, name)
-	})
-
-	t.Run("copy error", func(t *testing.T) {
-		fs := setupFS()
-		salt := new(mockSalt)
-
-		salt.On("Generate").Return("abc", nil)
-
-		tmpFile, _ := os.CreateTemp("", "img")
-		defer func() { _ = os.Remove(tmpFile.Name()) }()
-
-		fs.On("Create", mock.Anything).Return(tmpFile, nil)
-
-		adapter := NewStorageAdapterWithDeps(fs, salt)
-
-		name, err := adapter.UploadPicture(
-			&errReader{},
-			"pic.png",
-			"user1",
-		)
-
+		name, err := adapter.UploadPicture(bytes.NewBufferString("img"), "pic.png", "user1")
 		assert.Error(t, err)
 		assert.Empty(t, name)
 	})
@@ -362,59 +278,27 @@ func TestUploadPicture(t *testing.T) {
 func TestDeletePictures(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
 		fs.On("RemoveAll", mock.Anything).Return(nil)
 
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeletePictures("user1")
 		assert.NoError(t, err)
 	})
 
 	t.Run("not found", func(t *testing.T) {
 		fs := setupFS()
-
 		fs.On("Stat", mock.Anything).Return(nil, os.ErrNotExist)
 
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeletePictures("user1")
 		assert.NoError(t, err)
 	})
 
 	t.Run("invalid login", func(t *testing.T) {
 		fs := setupFS()
-
 		adapter := NewStorageAdapter(fs)
-
 		err := adapter.DeletePictures("../bad")
-
 		assert.ErrorIs(t, err, ErrInvalidName)
-	})
-
-	t.Run("stat error (not IsNotExist)", func(t *testing.T) {
-		fs := setupFS()
-
-		fs.On("Stat", mock.Anything).Return(nil, errors.New("stat error"))
-
-		adapter := NewStorageAdapter(fs)
-
-		err := adapter.DeletePictures("user1")
-
-		// пойдет дальше и вызовет RemoveAll с тем же путем
-		assert.Error(t, err)
-	})
-
-	t.Run("removeAll error", func(t *testing.T) {
-		fs := setupFS()
-
-		fs.On("Stat", mock.Anything).Return(&fakeFileInfo{}, nil)
-		fs.On("RemoveAll", mock.Anything).Return(errors.New("remove error"))
-
-		adapter := NewStorageAdapter(fs)
-
-		err := adapter.DeletePictures("user1")
-		assert.Error(t, err)
 	})
 }

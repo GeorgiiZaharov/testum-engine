@@ -85,25 +85,38 @@ func (s *StorageAdapter) fullImagePath(parts ...string) string {
 // FILES
 // ========================
 
-func (s *StorageAdapter) UploadFile(file io.Reader, fileName string) error {
+func (s *StorageAdapter) UploadFile(file io.Reader, fileName string) (string, error) {
 	if err := s.validateName(fileName); err != nil {
-		return err
+		return "", err
 	}
 
-	path := s.fullPath(fileName)
+	ext := filepath.Ext(fileName)
+	name := strings.TrimSuffix(fileName, ext)
 
-	if _, err := s.fs.Stat(path); err == nil {
-		return ErrFileExists
-	}
-
-	f, err := s.fs.Create(path)
+	salt, err := s.saltGen.Generate()
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	newName := name + "_" + salt + ext
+	fullPath := s.fullPath(newName)
+
+	// Проверяем существует ли файл с таким именем (редко, но может быть)
+	if _, err := s.fs.Stat(fullPath); err == nil {
+		return "", ErrFileExists
+	}
+
+	f, err := s.fs.Create(fullPath)
+	if err != nil {
+		return "", err
 	}
 	defer func() { _ = f.Close() }()
 
-	_, err = io.Copy(f, file)
-	return err
+	if _, err := io.Copy(f, file); err != nil {
+		return "", err
+	}
+
+	return newName, nil
 }
 
 func (s *StorageAdapter) GetFile(fileName string) (*os.File, error) {
