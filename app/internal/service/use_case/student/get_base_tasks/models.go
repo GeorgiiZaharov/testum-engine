@@ -10,11 +10,12 @@ type GetBaseTasksResponse struct {
 }
 
 type Task struct {
-	ID       int
-	Text     string
-	ImageURL *string
-	IsHard   bool
-	Answers  []Answer
+	ID               int
+	Text             string
+	ImageURL         *string
+	IsHard           bool
+	IsMultipleChoice bool
+	Answers          []Answer
 }
 
 type Answer struct {

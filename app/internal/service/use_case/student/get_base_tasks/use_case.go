@@ -72,6 +72,7 @@ func (uc *UseCase) Execute(ctx context.Context, req GetBaseTasksRequest) (GetBas
 
 		for _, t := range tasks {
 			answers := make([]Answer, 0, len(t.Answers))
+			trueAnswersCnt := 0
 
 			for _, a := range t.Answers {
 				answers = append(answers, Answer{
@@ -79,14 +80,22 @@ func (uc *UseCase) Execute(ctx context.Context, req GetBaseTasksRequest) (GetBas
 					Text:     a.Text,
 					ImageURL: a.ImageURL,
 				})
+				if a.IsCorrect {
+					trueAnswersCnt += 1
+				}
 			}
 
+			isMultipleChoice := false
+			if trueAnswersCnt > 1 {
+				isMultipleChoice = true
+			}
 			resultTasks = append(resultTasks, Task{
-				ID:       t.ID,
-				Text:     t.Text,
-				ImageURL: t.ImageURL,
-				IsHard:   t.IsHard,
-				Answers:  answers,
+				ID:               t.ID,
+				Text:             t.Text,
+				ImageURL:         t.ImageURL,
+				IsHard:           t.IsHard,
+				IsMultipleChoice: isMultipleChoice,
+				Answers:          answers,
 			})
 		}
 

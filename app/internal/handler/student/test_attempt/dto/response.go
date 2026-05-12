@@ -5,11 +5,12 @@ type GetTasksResponse struct {
 }
 
 type TaskResponse struct {
-	ID       int              `json:"id"`
-	Text     string           `json:"text"`
-	ImageURL *string          `json:"image_url,omitempty"`
-	IsHard   bool             `json:"is_hard"`
-	Answers  []AnswerResponse `json:"answers"`
+	ID               int              `json:"id"`
+	Text             string           `json:"text"`
+	ImageURL         *string          `json:"image_url,omitempty"`
+	IsHard           bool             `json:"is_hard"`
+	IsMultipleChoise bool             `json:"is_multiple_choise"`
+	Answers          []AnswerResponse `json:"answers"`
 }
 
 type AnswerResponse struct {

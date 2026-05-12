@@ -72,11 +72,12 @@ func convertHardTasks(
 
 	for _, t := range in {
 		out = append(out, TaskResponse{
-			ID:       t.ID,
-			Text:     t.Text,
-			ImageURL: t.ImageURL,
-			IsHard:   t.IsHard,
-			Answers:  convertHardAnswers(t.Answers),
+			ID:               t.ID,
+			Text:             t.Text,
+			ImageURL:         t.ImageURL,
+			IsHard:           t.IsHard,
+			IsMultipleChoise: t.IsMultipleChoice,
+			Answers:          convertHardAnswers(t.Answers),
 		})
 	}
 
@@ -90,11 +91,12 @@ func convertBaseTasks(
 
 	for _, t := range in {
 		out = append(out, TaskResponse{
-			ID:       t.ID,
-			Text:     t.Text,
-			ImageURL: t.ImageURL,
-			IsHard:   t.IsHard,
-			Answers:  convertBaseAnswers(t.Answers),
+			ID:               t.ID,
+			Text:             t.Text,
+			ImageURL:         t.ImageURL,
+			IsHard:           t.IsHard,
+			IsMultipleChoise: t.IsMultipleChoice,
+			Answers:          convertBaseAnswers(t.Answers),
 		})
 	}
 

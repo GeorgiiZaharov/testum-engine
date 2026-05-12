@@ -28,6 +28,7 @@
       "text": "string",
       "image_url": "string",
       "is_hard": true,
+      "is_multiple_choice": false,
       "answers": [
         {
           "text": "string",
@@ -90,6 +91,7 @@ curl -X GET http://localhost:8080/student/tests/123/hard \
       "text": "string",
       "image_url": "string",
       "is_hard": false,
+      "is_multiple_choice": false,
       "answers": [
         {
           "text": "string",

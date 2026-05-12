@@ -75,20 +75,30 @@ func (uc *UseCase) Execute(ctx context.Context, req GetHardTasksRequest) (GetHar
 		hardTasks := make([]Task, 0, len(tasks))
 		for _, t := range tasks {
 			answers := make([]Answer, 0, len(t.Answers))
+			trueAnswersCnt := 0
+
 			for _, a := range t.Answers {
 				answers = append(answers, Answer{
 					ID:       a.ID,
 					Text:     a.Text,
 					ImageURL: a.ImageURL,
 				})
+				if a.IsCorrect {
+					trueAnswersCnt += 1
+				}
 			}
 
+			isMultipleChoice := false
+			if trueAnswersCnt > 1 {
+				isMultipleChoice = true
+			}
 			hardTasks = append(hardTasks, Task{
-				ID:       t.ID,
-				Text:     t.Text,
-				ImageURL: t.ImageURL,
-				IsHard:   t.IsHard,
-				Answers:  answers,
+				ID:               t.ID,
+				Text:             t.Text,
+				ImageURL:         t.ImageURL,
+				IsHard:           t.IsHard,
+				IsMultipleChoice: isMultipleChoice,
+				Answers:          answers,
 			})
 		}
 
