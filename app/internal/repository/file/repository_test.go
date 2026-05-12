@@ -79,10 +79,10 @@ func TestGetAllTestFiles_HappyPath(t *testing.T) {
 func TestGetAllTestFiles_NotFound(t *testing.T) {
 	env := setup(t)
 
-	_, err := env.repo.GetAllTestFiles(context.Background(), 999)
+	files, err := env.repo.GetAllTestFiles(context.Background(), 999)
 
-	require.Error(t, err)
-	assert.Equal(t, ErrFilesNotFound, err)
+	assert.Empty(t, files)
+	assert.NoError(t, err)
 }
 
 // =========================

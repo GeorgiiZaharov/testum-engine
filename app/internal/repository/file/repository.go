@@ -67,7 +67,7 @@ func (r *repository) GetAllTestFiles(ctx context.Context, lecturerID int) ([]str
 	}
 
 	if len(files) == 0 {
-		return nil, ErrFilesNotFound
+		return files, nil
 	}
 
 	return files, nil
