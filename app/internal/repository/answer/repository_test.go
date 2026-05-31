@@ -34,16 +34,16 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../migrations",
 	})
 	require.NoError(t, err)
+
 	t.Cleanup(cleanup)
+
+	_, err = database.Exec(`PRAGMA foreign_keys = ON`)
+	require.NoError(t, err)
 
 	fx := fixtures.New(database)
 	require.NoError(t, fx.Reset(ctx))
@@ -114,7 +114,7 @@ func Test_GetBaseAnswers_DBError(t *testing.T) {
 	repo, mock, dbConn := mockRepo(t)
 	defer func() { _ = dbConn.Close() }()
 
-	mock.ExpectQuery("select").
+	mock.ExpectQuery("SELECT").
 		WillReturnError(errors.New("db error"))
 
 	_, err := (*repo).GetBaseAnswers(context.Background(), 1, 1)
@@ -126,7 +126,7 @@ func Test_GetHardAnswers_DBError(t *testing.T) {
 	repo, mock, dbConn := mockRepo(t)
 	defer func() { _ = dbConn.Close() }()
 
-	mock.ExpectQuery("select").
+	mock.ExpectQuery("SELECT").
 		WillReturnError(errors.New("db error"))
 
 	_, err := (*repo).GetHardAnswers(context.Background(), 1, 1)
@@ -148,7 +148,7 @@ func Test_SaveBaseAnswers_DBError(t *testing.T) {
 	repo, mock, dbConn := mockRepo(t)
 	defer func() { _ = dbConn.Close() }()
 
-	mock.ExpectExec("INSERT").
+	mock.ExpectExec("INSERT INTO student_answers").
 		WillReturnError(errors.New("insert failed"))
 
 	ok, err := (*repo).SaveBaseAnswers(context.Background(), 1, []int{1, 2})
@@ -161,7 +161,7 @@ func Test_DeleteAttempt_DBError(t *testing.T) {
 	repo, mock, dbConn := mockRepo(t)
 	defer func() { _ = dbConn.Close() }()
 
-	mock.ExpectExec("delete").
+	mock.ExpectExec("DELETE FROM student_answers").
 		WillReturnError(errors.New("delete failed"))
 
 	ok, err := (*repo).DeleteAttempt(context.Background(), 1, 1)

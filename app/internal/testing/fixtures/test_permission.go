@@ -37,9 +37,9 @@ func (m *Manager) seedTestPermissions(ctx context.Context) error {
 	}
 
 	query := `
-    INSERT INTO test_permissions
-        (id, test_id, ` + "`group`" + `)
-    VALUES (?, ?, ?)
+		INSERT INTO test_permissions
+			(id, test_id, ` + "`group`" + `)
+		VALUES (?, ?, ?)
 	`
 
 	for _, p := range permissions {

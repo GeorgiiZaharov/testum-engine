@@ -1,10 +1,10 @@
 -- +goose Up
 CREATE TABLE student_answers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
-    answer_id INT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    answer_id INTEGER NOT NULL,
 
-    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_student_answers_user
         FOREIGN KEY (student_id)

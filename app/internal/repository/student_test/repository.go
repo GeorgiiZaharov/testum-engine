@@ -20,51 +20,45 @@ type repository struct {
 }
 
 func NewRepository(db db.Executor, log *zap.Logger) Repository {
-	return &repository{
-		db:  db,
-		log: log,
-	}
+	return &repository{db: db, log: log}
 }
 
-// ==================== START TEST ====================
+// ================= START TEST =================
+
 func (r *repository) StartTest(ctx context.Context, params StartTestParams) (bool, error) {
 	query := `
-		INSERT INTO student_tests (student_id, test_id, ` + "`group`" + `, date_start)
+		INSERT INTO student_tests (student_id, test_id, "group", date_start)
 		VALUES (
-			?, 
-			?, 
-			(SELECT ` + "`group`" + ` FROM users WHERE id = ?), 
-			NOW()
+			?,
+			?,
+			(SELECT "group" FROM users WHERE id = ?),
+			CURRENT_TIMESTAMP
 		)
-		ON DUPLICATE KEY UPDATE student_id = student_id
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		params.UserID,
 		params.TestID,
-		params.UserID, // для подзапроса
+		params.UserID,
 	)
 
 	if err != nil {
-		r.log.Error("failed to start test",
-			zap.Error(err),
-			zap.Int("user_id", params.UserID),
-			zap.Int("test_id", params.TestID),
-		)
+		r.log.Error("failed to start test", zap.Error(err))
 		return false, err
 	}
 
 	return true, nil
 }
 
-// ==================== FINISH TEST ====================
+// ================= FINISH TEST =================
+
 func (r *repository) FinishTest(ctx context.Context, params FinishTestParams) (bool, error) {
 	query := `
-		update student_tests
-		set mark = ?,
-			success_rate = ?,
-			date_end = now()
-		where student_id = ? and test_id = ?
+		UPDATE student_tests
+		SET mark = ?,
+		    success_rate = ?,
+		    date_end = CURRENT_TIMESTAMP
+		WHERE student_id = ? AND test_id = ?
 	`
 
 	res, err := r.db.ExecContext(ctx, query,
@@ -73,21 +67,12 @@ func (r *repository) FinishTest(ctx context.Context, params FinishTestParams) (b
 		params.UserID,
 		params.TestID,
 	)
-
 	if err != nil {
-		r.log.Error("failed to finish test",
-			zap.Error(err),
-			zap.Int("user_id", params.UserID),
-			zap.Int("test_id", params.TestID),
-		)
 		return false, ErrFinishFailed
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		r.log.Error("failed to get rows affected",
-			zap.Error(err),
-		)
 		return false, err
 	}
 
@@ -98,127 +83,89 @@ func (r *repository) FinishTest(ctx context.Context, params FinishTestParams) (b
 	return true, nil
 }
 
-// ==================== GET ACTIVE TESTS ====================
-// тесты доступны по группе, но НЕ завершены (mark IS NULL)
+// ================= GET ACTIVE TESTS =================
+
 func (r *repository) GetActiveTests(ctx context.Context, userID int) ([]StudentActiveTestInfo, error) {
 	query := `
-		select
+		SELECT
 			t.id,
 			t.name,
-			u.name as lecturer_name,
-			(select count(*) from tasks where test_id = t.id),
-			(select count(*) from tasks where test_id = t.id and is_hard = true),
+			u.name,
+			(SELECT COUNT(*) FROM tasks WHERE test_id = t.id),
+			(SELECT COUNT(*) FROM tasks WHERE test_id = t.id AND is_hard = 1),
 			st.date_start
-
-		from users us
-
-		join test_permissions tp 
-			on tp.group = us.` + "`group`" + `
-
-		join tests t 
-			on t.id = tp.test_id
-
-		join users u 
-			on u.id = t.owner_id
-
-		left join student_tests st
-			on st.test_id = t.id
-			and st.student_id = us.id
-
-		where us.id = ?
-		  and (st.mark is null)
-
-		order by st.date_start desc
+		FROM users us
+		JOIN test_permissions tp ON tp."group" = us."group"
+		JOIN tests t ON t.id = tp.test_id
+		JOIN users u ON u.id = t.owner_id
+		LEFT JOIN student_tests st ON st.test_id = t.id AND st.student_id = us.id
+		WHERE us.id = ?
+		  AND st.mark IS NULL
+		ORDER BY st.date_start DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
-		r.log.Error("failed to get active tests",
-			zap.Error(err),
-			zap.Int("user_id", userID),
-		)
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var result []StudentActiveTestInfo
 
 	for rows.Next() {
 		var item StudentActiveTestInfo
 
-		err := rows.Scan(
+		if err := rows.Scan(
 			&item.ID,
 			&item.Name,
 			&item.LecturerName,
 			&item.CntQuestions,
 			&item.CntHardQuestions,
 			&item.DateStart,
-		)
-		if err != nil {
-			r.log.Error("scan failed in GetActiveTests",
-				zap.Error(err),
-			)
+		); err != nil {
 			return nil, err
 		}
 
 		result = append(result, item)
 	}
 
-	if err = rows.Err(); err != nil {
-		r.log.Error("rows iteration error",
-			zap.Error(err),
-		)
-		return nil, err
-	}
-
-	return result, nil
+	return result, rows.Err()
 }
 
-// ==================== GET FINISHED TESTS ====================
-// только завершённые (есть оценка)
+// ================= GET FINISHED TESTS =================
+
 func (r *repository) GetFinishedTests(ctx context.Context, userID int) ([]StudentFinishedTestInfo, error) {
 	query := `
-		select
+		SELECT
 			t.id,
 			t.name,
-			u.name as lecturer_name,
-			(select count(*) from tasks where test_id = t.id),
-			(select count(*) from tasks where test_id = t.id and is_hard = true),
+			u.name,
+			(SELECT COUNT(*) FROM tasks WHERE test_id = t.id),
+			(SELECT COUNT(*) FROM tasks WHERE test_id = t.id AND is_hard = 1),
 			st.mark,
 			st.success_rate,
 			st.date_start,
 			st.date_end
-
-		from student_tests st
-
-		join tests t 
-			on t.id = st.test_id
-
-		join users u 
-			on u.id = t.owner_id
-
-		where st.student_id = ?
-		  and st.mark is not null
-
-		order by st.date_end desc
+		FROM student_tests st
+		JOIN tests t ON t.id = st.test_id
+		JOIN users u ON u.id = t.owner_id
+		WHERE st.student_id = ?
+		  AND st.mark IS NOT NULL
+		ORDER BY st.date_end DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
-		r.log.Error("failed to get finished tests",
-			zap.Error(err),
-			zap.Int("user_id", userID),
-		)
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var result []StudentFinishedTestInfo
 
 	for rows.Next() {
 		var item StudentFinishedTestInfo
 
-		err := rows.Scan(
+		if err := rows.Scan(
 			&item.ID,
 			&item.Name,
 			&item.LecturerName,
@@ -228,23 +175,12 @@ func (r *repository) GetFinishedTests(ctx context.Context, userID int) ([]Studen
 			&item.SuccessRate,
 			&item.DateStart,
 			&item.DateEnd,
-		)
-		if err != nil {
-			r.log.Error("scan failed in GetFinishedTests",
-				zap.Error(err),
-			)
+		); err != nil {
 			return nil, err
 		}
 
 		result = append(result, item)
 	}
 
-	if err = rows.Err(); err != nil {
-		r.log.Error("rows iteration error",
-			zap.Error(err),
-		)
-		return nil, err
-	}
-
-	return result, nil
+	return result, rows.Err()
 }

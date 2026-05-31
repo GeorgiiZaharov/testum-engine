@@ -29,25 +29,28 @@ func NewRepository(db db.Executor, log *zap.Logger) Repository {
 	}
 }
 
-// ================= UPSERT =================
+// ================= UPSERT (SQLite version) =================
+// В SQLite используем ON CONFLICT(login)
 func (r *repository) Upsert(ctx context.Context, params CreateUserParams) (int, error) {
 	query := `
 		INSERT INTO users (login, mail, name, ` + "`group`" + `, is_lecturer, date_created, date_modified)
-		VALUES (?, ?, ?, ?, false, NOW(), NOW())
-		ON DUPLICATE KEY UPDATE
-			mail = VALUES(mail),
-			name = VALUES(name),
-			` + "`group`" + ` = VALUES(` + "`group`" + `),
-			date_modified = NOW()
+		VALUES (?, ?, ?, ?, 0, datetime('now'), datetime('now'))
+		ON CONFLICT(login) DO UPDATE SET
+			mail = excluded.mail,
+			name = excluded.name,
+			` + "`group`" + ` = excluded.` + "`group`" + `,
+			date_modified = datetime('now')
+		RETURNING id
 	`
 
-	res, err := r.db.ExecContext(ctx,
-		query,
+	var id int
+	err := r.db.QueryRowContext(ctx, query,
 		params.Login,
 		params.Mail,
 		params.Name,
 		params.Group,
-	)
+	).Scan(&id)
+
 	if err != nil {
 		r.log.Error("Upsert failed",
 			zap.Error(err),
@@ -56,24 +59,7 @@ func (r *repository) Upsert(ctx context.Context, params CreateUserParams) (int, 
 		return 0, err
 	}
 
-	id, err := res.LastInsertId()
-	if err != nil || id == 0 {
-		// fallback — получить id по login
-		err = r.db.QueryRowContext(ctx,
-			`SELECT id FROM users WHERE login = ?`,
-			params.Login,
-		).Scan(&id)
-
-		if err != nil {
-			r.log.Error("Upsert get id failed",
-				zap.Error(err),
-				zap.String("login", params.Login),
-			)
-			return 0, err
-		}
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 // ================= GET BY ID =================
@@ -116,7 +102,7 @@ func (r *repository) GetLecturers(ctx context.Context) ([]User, error) {
 	query := `
 		SELECT id, login, mail, name, ` + "`group`" + `, is_lecturer, date_created, date_modified
 		FROM users
-		WHERE is_lecturer = true
+		WHERE is_lecturer = 1
 	`
 
 	rows, err := r.db.QueryContext(ctx, query)
@@ -149,6 +135,10 @@ func (r *repository) GetLecturers(ctx context.Context) ([]User, error) {
 		result = append(result, u)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 
@@ -156,8 +146,8 @@ func (r *repository) GetLecturers(ctx context.Context) ([]User, error) {
 func (r *repository) CreateLecturer(ctx context.Context, userID int) error {
 	query := `
 		UPDATE users
-		SET is_lecturer = true
-		WHERE id = ? AND is_lecturer = false
+		SET is_lecturer = 1
+		WHERE id = ? AND is_lecturer = 0
 	`
 
 	res, err := r.db.ExecContext(ctx, query, userID)
@@ -178,7 +168,6 @@ func (r *repository) CreateLecturer(ctx context.Context, userID int) error {
 		return nil
 	}
 
-	// проверяем существует ли пользователь
 	var exists bool
 	err = r.db.QueryRowContext(ctx,
 		"SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)",
@@ -199,7 +188,7 @@ func (r *repository) CreateLecturer(ctx context.Context, userID int) error {
 func (r *repository) DeleteLecturer(ctx context.Context, userID int) error {
 	query := `
 		UPDATE users
-		SET is_lecturer = false, date_modified = NOW()
+		SET is_lecturer = 0, date_modified = datetime('now')
 		WHERE id = ?
 	`
 

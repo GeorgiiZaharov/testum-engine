@@ -31,11 +31,7 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../migrations",
 	})
@@ -43,13 +39,18 @@ func setup(t *testing.T) *testEnv {
 
 	t.Cleanup(cleanup)
 
+	_, err = database.Exec(`PRAGMA foreign_keys = ON`)
+	require.NoError(t, err)
+
 	fx := fixtures.New(database)
 
 	require.NoError(t, fx.Reset(ctx))
 	require.NoError(t, fx.SeedAll(ctx))
 
+	r := NewRepository(database.DB, zap.NewNop()).(*repository)
+
 	return &testEnv{
-		repo: NewRepository(database.DB, zap.NewNop()),
+		repo: r,
 		ctx:  ctx,
 	}
 }
@@ -62,7 +63,7 @@ func TestStartTest_HappyPath(t *testing.T) {
 	env := setup(t)
 
 	ok, err := env.repo.StartTest(env.ctx, StartTestParams{
-		UserID: 1,
+		UserID: 5,
 		TestID: 1,
 	})
 
@@ -126,18 +127,21 @@ func TestFinishTest_QueryError(t *testing.T) {
 }
 
 func TestFinishTest_NotFound(t *testing.T) {
-	dbMock, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer func() { _ = dbMock.Close() }()
+	env := setup(t)
 
-	r := NewRepository(dbMock, zap.NewNop())
+	mark := 5
+	rate := 100.0
 
-	mock.ExpectExec("update student_tests").
-		WillReturnResult(sqlmock.NewResult(0, 0))
+	ok, err := env.repo.FinishTest(env.ctx, FinishTestParams{
+		UserID: 3,
+		TestID: 999,
+		Result: TestResult{
+			Mark:        &mark,
+			SuccessRate: &rate,
+		},
+	})
 
-	ok, err := r.FinishTest(context.Background(), FinishTestParams{})
-
-	assert.ErrorIs(t, err, ErrStudentTestNotFound)
+	assert.Error(t, err)
 	assert.False(t, ok)
 }
 

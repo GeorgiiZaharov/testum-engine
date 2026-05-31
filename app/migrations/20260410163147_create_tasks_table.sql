@@ -1,10 +1,10 @@
 -- +goose Up
 CREATE TABLE tasks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    test_id INT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL,
     text TEXT NOT NULL,
-    image_url VARCHAR(255) NULL,
-    is_hard BOOLEAN NOT NULL,
+    image_url TEXT,
+    is_hard INTEGER NOT NULL,
 
     CONSTRAINT fk_tasks_test
         FOREIGN KEY (test_id)

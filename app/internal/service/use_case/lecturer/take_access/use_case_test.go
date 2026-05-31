@@ -24,11 +24,7 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../../../migrations/",
 	})
@@ -128,4 +124,3 @@ func TestTakeAccess_GroupNotExists(t *testing.T) {
 	require.Error(t, err)
 	require.False(t, res.Success)
 }
-

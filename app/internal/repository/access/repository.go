@@ -64,7 +64,7 @@ func (r *repository) HasStudentAccess(ctx context.Context, userID int, testID in
 		SELECT EXISTS (
 			SELECT 1
 			FROM users u
-			JOIN test_permissions tp ON u.group = tp.group
+			JOIN test_permissions tp ON u."group" = tp."group"
 			WHERE u.id = ?
 			  AND tp.test_id = ?
 		)
@@ -89,7 +89,7 @@ func (r *repository) HasStudentAccess(ctx context.Context, userID int, testID in
 
 func (r *repository) GiveAccess(ctx context.Context, testID int, group string) (bool, error) {
 	query := `
-		INSERT INTO test_permissions (test_id, ` + "`group`" + `)
+		INSERT INTO test_permissions (test_id, "group")
 		VALUES (?, ?)
 	`
 
@@ -112,7 +112,7 @@ func (r *repository) TakeAccess(ctx context.Context, testID int, group string) (
 	query := `
 		DELETE FROM test_permissions
 		WHERE test_id = ?
-		  AND ` + "`group`" + ` = ?
+		  AND "group" = ?
 	`
 
 	res, err := r.db.ExecContext(ctx, query, testID, group)

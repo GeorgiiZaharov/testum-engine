@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE test_permissions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    test_id INT NOT NULL,
-    `group` VARCHAR(100) NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL,
+    "group" TEXT NOT NULL,
 
     CONSTRAINT fk_permissions_test
         FOREIGN KEY (test_id)

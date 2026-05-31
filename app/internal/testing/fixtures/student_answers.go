@@ -23,14 +23,12 @@ func (m *Manager) seedStudentAnswers(ctx context.Context) error {
 			AnswerID:  2,
 			CreatedAt: now,
 		},
-
 		{
 			ID:        2,
 			StudentID: 3,
 			AnswerID:  3,
 			CreatedAt: now,
 		},
-
 		{
 			ID:        3,
 			StudentID: 4,
@@ -56,7 +54,7 @@ func (m *Manager) seedStudentAnswers(ctx context.Context) error {
 			a.ID,
 			a.StudentID,
 			a.AnswerID,
-			a.CreatedAt,
+			a.CreatedAt.UTC().Format(time.RFC3339),
 		)
 		if err != nil {
 			return fmt.Errorf(

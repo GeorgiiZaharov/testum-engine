@@ -1,15 +1,15 @@
 -- +goose Up
 CREATE TABLE student_tests (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
-    test_id INT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    test_id INTEGER NOT NULL,
 
-    mark INT NULL,
-    `group` VARCHAR(100) NOT NULL,
-    success_rate FLOAT NULL,
+    mark INTEGER,
+    "group" TEXT NOT NULL,
+    success_rate REAL,
 
-    date_start TIMESTAMP NULL,
-    date_end TIMESTAMP NULL,
+    date_start DATETIME,
+    date_end DATETIME,
 
     CONSTRAINT fk_student_tests_user
         FOREIGN KEY (student_id)
@@ -21,7 +21,8 @@ CREATE TABLE student_tests (
         REFERENCES tests(id)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_student_test UNIQUE (student_id, test_id)
+    CONSTRAINT uq_student_test
+        UNIQUE (student_id, test_id)
 );
 
 -- +goose Down

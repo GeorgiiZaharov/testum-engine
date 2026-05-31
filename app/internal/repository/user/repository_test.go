@@ -33,11 +33,7 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../migrations",
 	})
@@ -45,12 +41,18 @@ func setup(t *testing.T) *testEnv {
 
 	t.Cleanup(cleanup)
 
+	_, err = database.Exec(`PRAGMA foreign_keys = ON`)
+	require.NoError(t, err)
+
 	fx := fixtures.New(database)
+
 	require.NoError(t, fx.Reset(ctx))
 	require.NoError(t, fx.SeedAll(ctx))
 
+	r := NewRepository(database.DB, zap.NewNop()).(*repository)
+
 	return &testEnv{
-		repo: NewRepository(database.DB, zap.NewNop()),
+		repo: r,
 		ctx:  ctx,
 	}
 }
@@ -123,8 +125,10 @@ func TestUpsert_LastInsertFallback(t *testing.T) {
 	dbMock, mock, _ := sqlmock.New()
 	defer func() { _ = dbMock.Close() }()
 
-	mock.ExpectExec("INSERT INTO users").
-		WillReturnResult(sqlmock.NewResult(0, 1)) // id = 0 → fallback
+	mock.ExpectQuery("INSERT INTO users").
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id"}).AddRow(10),
+		)
 
 	mock.ExpectQuery("SELECT id FROM users").
 		WithArgs("test").

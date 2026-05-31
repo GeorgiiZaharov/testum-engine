@@ -46,19 +46,19 @@ func NewContainer(cfg config.Config) (*Container, error) {
 	// database
 	// =====================
 	database, err := db.NewDB(db.DBOptions{
-		Host: cfg.DB.Host,
-		Port: cfg.DB.Port,
-		User: cfg.DB.User,
-		Pass: cfg.DB.Pass,
-		Name: cfg.DB.Name,
+		Path: cfg.DB.Path,
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	if _, err := database.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		return nil, err
+	}
+
 	migCfg := db.MigrationConfig{
 		Dir:     "./migrations",
-		Dialect: "mysql",
+		Dialect: "sqlite",
 	}
 
 	if err := db.RunMigrations(database.DB.DB, migCfg); err != nil {

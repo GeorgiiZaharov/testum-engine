@@ -37,7 +37,7 @@ func (r *repository) Create(ctx context.Context, lecturerID int, test Test) (int
 	// 1. test
 	res, err := r.db.ExecContext(ctx, `
 		insert into tests (owner_id, name, file_name, date_created)
-		values (?, ?, ?, now())
+		values (?, ?, ?, CURRENT_TIMESTAMP)
 	`, lecturerID, test.Name, test.FileName)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func (r *repository) GetByID(ctx context.Context, testID int) (TestInfo, error) 
 			t.id,
 			t.name,
 			(select count(*) from tasks where test_id = t.id),
-			(select count(*) from tasks where test_id = t.id and is_hard = true),
+			(select count(*) from tasks where test_id = t.id and is_hard = 1),
 			t.file_name,
 			t.date_created
 		from tests t
@@ -187,7 +187,7 @@ func (r *repository) GetByLecturer(ctx context.Context, lecturerID int) ([]TestI
 			t.id,
 			t.name,
 			(select count(*) from tasks where test_id = t.id),
-			(select count(*) from tasks where test_id = t.id and is_hard = true),
+			(select count(*) from tasks where test_id = t.id and is_hard = 1),
 			t.file_name,
 			t.date_created
 		from tests t
@@ -227,12 +227,10 @@ func (r *repository) GetByLecturer(ctx context.Context, lecturerID int) ([]TestI
 		return nil, err
 	}
 
-	// если нет тестов
 	if len(ids) == 0 {
 		return result, nil
 	}
 
-	// ---- build IN (?, ?, ?) ----
 	in := make([]string, len(ids))
 	args := make([]any, len(ids))
 
@@ -275,23 +273,7 @@ func (r *repository) GetByLecturer(ctx context.Context, lecturerID int) ([]TestI
 	return result, nil
 }
 
-func (r *repository) getAcademicRange(year int) (time.Time, time.Time) {
-	now := r.now()
-
-	currentYear := now.Year()
-	august := time.Date(currentYear, time.August, 1, 0, 0, 0, 0, now.Location())
-
-	if now.Before(august) {
-		start := august.AddDate(-1-year, 0, 0)
-		end := august.AddDate(-year, 0, 0)
-		return start, end
-	}
-
-	start := august.AddDate(-year, 0, 0)
-	end := august.AddDate(1-year, 0, 0)
-	return start, end
-}
-
+// ==================== GET GROUPS ====================
 func (r *repository) GetGroups(ctx context.Context, testID int, year int) ([]GroupInfo, error) {
 	start, end := r.getAcademicRange(year)
 
@@ -309,7 +291,6 @@ func (r *repository) GetGroups(ctx context.Context, testID int, year int) ([]Gro
 					MAX(CASE WHEN res.source = 'tp' THEN res.members_count END)
 				) as members_count
 			FROM (
-				-- 1. Группы с доступом
 				SELECT 
 					tp.` + "`group`" + ` AS group_name,
 					COUNT(u.id) as members_count,
@@ -324,7 +305,6 @@ func (r *repository) GetGroups(ctx context.Context, testID int, year int) ([]Gro
 
 				UNION ALL
 
-				-- 2. Группы, которые уже проходили тест
 				SELECT 
 					st.` + "`group`" + ` AS group_name,
 					COUNT(DISTINCT st.student_id) as members_count,
@@ -338,17 +318,12 @@ func (r *repository) GetGroups(ctx context.Context, testID int, year int) ([]Gro
 			GROUP BY res.group_name
 		`
 
-		rows, err = r.db.QueryContext(
-			ctx,
-			query,
-			start, end, testID, // tp
-			testID, start, end, // st
-		)
+		rows, err = r.db.QueryContext(ctx, query, start, end, testID, testID, start, end)
 	} else {
 		query := `
 			SELECT 
 				st.` + "`group`" + `,
-				COUNT(DISTINCT st.student_id) as members_count
+				COUNT(DISTINCT st.student_id)
 			FROM student_tests st
 			WHERE st.test_id = ?
 			  AND st.date_start >= ?
@@ -373,21 +348,13 @@ func (r *repository) GetGroups(ctx context.Context, testID int, year int) ([]Gro
 
 	for rows.Next() {
 		var g GroupInfo
-
 		if err := rows.Scan(&g.GroupName, &g.MembersCount); err != nil {
-			r.log.Error("GetGroups scan failed",
-				zap.Error(err),
-			)
 			return nil, err
 		}
-
 		result = append(result, g)
 	}
 
 	if err := rows.Err(); err != nil {
-		r.log.Error("GetGroups rows error",
-			zap.Error(err),
-		)
 		return nil, err
 	}
 
@@ -396,4 +363,22 @@ func (r *repository) GetGroups(ctx context.Context, testID int, year int) ([]Gro
 	}
 
 	return result, nil
+}
+
+// ==================== TIME ====================
+func (r *repository) getAcademicRange(year int) (time.Time, time.Time) {
+	now := r.now()
+
+	currentYear := now.Year()
+	august := time.Date(currentYear, time.August, 1, 0, 0, 0, 0, now.Location())
+
+	if now.Before(august) {
+		start := august.AddDate(-1-year, 0, 0)
+		end := august.AddDate(-year, 0, 0)
+		return start, end
+	}
+
+	start := august.AddDate(-year, 0, 0)
+	end := august.AddDate(1-year, 0, 0)
+	return start, end
 }

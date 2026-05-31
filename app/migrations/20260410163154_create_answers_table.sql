@@ -1,10 +1,10 @@
 -- +goose Up
 CREATE TABLE answers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    task_id INT NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL,
     text TEXT NOT NULL,
-    image_url VARCHAR(255) NULL,
-    is_correct BOOLEAN NOT NULL,
+    image_url TEXT,
+    is_correct INTEGER NOT NULL,
 
     CONSTRAINT fk_answers_task
         FOREIGN KEY (task_id)

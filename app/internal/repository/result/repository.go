@@ -21,7 +21,6 @@ type Repository interface {
 type repository struct {
 	db  db.Executor
 	log *zap.Logger
-
 	now func() time.Time
 }
 
@@ -52,7 +51,7 @@ func (r *repository) getAcademicRange(year int) (time.Time, time.Time) {
 	return start, end
 }
 
-// ================= GetGroupResult =================
+// ================= GetGroupResult (SQLite-safe) =================
 
 func (r *repository) GetGroupResult(ctx context.Context, testID int, group string, year int) ([]StudentResult, error) {
 	start, end := r.getAcademicRange(year)
@@ -73,8 +72,8 @@ func (r *repository) GetGroupResult(ctx context.Context, testID int, group strin
 			AND st.test_id = ?
 			AND st.date_start >= ?
 			AND st.date_start < ?
-		WHERE u.` + "`group`" + ` = ?
-	  	AND u.date_modified >= ?
+		WHERE u."group" = ?
+		  AND u.date_modified >= ?
 	`
 
 	rows, err := r.db.QueryContext(ctx, query,
@@ -93,9 +92,9 @@ func (r *repository) GetGroupResult(ctx context.Context, testID int, group strin
 		)
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
-	results := make([]StudentResult, 0)
+	var results []StudentResult
 
 	for rows.Next() {
 		var sr StudentResult
@@ -168,16 +167,23 @@ func (r *repository) GetStudentResult(ctx context.Context, userID int, testID in
 	return result, nil
 }
 
+// ================= DeleteAttempt (SQLite-safe) =================
+
 func (r *repository) DeleteAttempt(ctx context.Context, testID int, userID int) error {
 
+	// delete answers via subquery (SQLite-safe, no JOIN DELETE)
 	_, err := r.db.ExecContext(ctx, `
-		DELETE sa
-		FROM student_answers sa
-		JOIN answers a ON a.id = sa.answer_id
-		JOIN tasks t ON t.id = a.task_id
-		WHERE sa.student_id = ?
-		  AND t.test_id = ?
-	`, userID, testID)
+		DELETE FROM student_answers
+		WHERE student_id = ?
+		  AND answer_id IN (
+			SELECT sa.answer_id
+			FROM student_answers sa
+			JOIN answers a ON a.id = sa.answer_id
+			JOIN tasks t ON t.id = a.task_id
+			WHERE t.test_id = ?
+			  AND sa.student_id = ?
+		  )
+	`, userID, testID, userID)
 
 	if err != nil {
 		r.log.Error("failed to delete student answers",

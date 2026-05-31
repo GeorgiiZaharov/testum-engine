@@ -2,9 +2,10 @@ package answer
 
 import (
 	"context"
-	"testum-engine/app/internal/adapter/db"
 
 	"go.uber.org/zap"
+
+	"testum-engine/app/internal/adapter/db"
 )
 
 type Repository interface {
@@ -44,13 +45,20 @@ func (r *repository) GetBaseAnswers(ctx context.Context, userID, testID int) ([]
 	return r.getAnswers(ctx, userID, testID, false)
 }
 
-func (r *repository) getAnswers(ctx context.Context, userID, testID int, isHard bool) ([]TaskAnswer, error) {
+func (r *repository) getAnswers(
+	ctx context.Context,
+	userID,
+	testID int,
+	isHard bool,
+) ([]TaskAnswer, error) {
 	query := `
-		select a.task_id, sa.answer_id
-		from student_answers sa
-		join answers a on a.id = sa.answer_id
-		join tasks t on t.id = a.task_id
-		where sa.student_id = ? and t.test_id = ? and t.is_hard = ?
+		SELECT a.task_id, sa.answer_id
+		FROM student_answers sa
+		JOIN answers a ON a.id = sa.answer_id
+		JOIN tasks t ON t.id = a.task_id
+		WHERE sa.student_id = ?
+		  AND t.test_id = ?
+		  AND t.is_hard = ?
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, userID, testID, isHard)
@@ -63,7 +71,8 @@ func (r *repository) getAnswers(ctx context.Context, userID, testID int, isHard 
 	resultMap := make(map[int][]int)
 
 	for rows.Next() {
-		var taskID, answerID int
+		var taskID int
+		var answerID int
 
 		if err := rows.Scan(&taskID, &answerID); err != nil {
 			return nil, err
@@ -76,7 +85,8 @@ func (r *repository) getAnswers(ctx context.Context, userID, testID int, isHard 
 		return nil, err
 	}
 
-	var result []TaskAnswer
+	result := make([]TaskAnswer, 0, len(resultMap))
+
 	for taskID, opts := range resultMap {
 		result = append(result, TaskAnswer{
 			TaskID:  taskID,
@@ -91,20 +101,32 @@ func (r *repository) getAnswers(ctx context.Context, userID, testID int, isHard 
 // GET CORRECT ANSWERS BY TEST
 // =========================
 
-func (r *repository) GetHardAnswersByTest(ctx context.Context, testID int) ([]TaskAnswer, error) {
+func (r *repository) GetHardAnswersByTest(
+	ctx context.Context,
+	testID int,
+) ([]TaskAnswer, error) {
 	return r.getCorrectAnswers(ctx, testID, true)
 }
 
-func (r *repository) GetBaseAnswersByTest(ctx context.Context, testID int) ([]TaskAnswer, error) {
+func (r *repository) GetBaseAnswersByTest(
+	ctx context.Context,
+	testID int,
+) ([]TaskAnswer, error) {
 	return r.getCorrectAnswers(ctx, testID, false)
 }
 
-func (r *repository) getCorrectAnswers(ctx context.Context, testID int, isHard bool) ([]TaskAnswer, error) {
+func (r *repository) getCorrectAnswers(
+	ctx context.Context,
+	testID int,
+	isHard bool,
+) ([]TaskAnswer, error) {
 	query := `
-		select t.id, a.id
-		from tasks t
-		join answers a on a.task_id = t.id
-		where t.test_id = ? and t.is_hard = ? and a.is_correct = true
+		SELECT t.id, a.id
+		FROM tasks t
+		JOIN answers a ON a.task_id = t.id
+		WHERE t.test_id = ?
+		  AND t.is_hard = ?
+		  AND a.is_correct = 1
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, testID, isHard)
@@ -117,7 +139,8 @@ func (r *repository) getCorrectAnswers(ctx context.Context, testID int, isHard b
 	resultMap := make(map[int][]int)
 
 	for rows.Next() {
-		var taskID, answerID int
+		var taskID int
+		var answerID int
 
 		if err := rows.Scan(&taskID, &answerID); err != nil {
 			return nil, err
@@ -130,7 +153,8 @@ func (r *repository) getCorrectAnswers(ctx context.Context, testID int, isHard b
 		return nil, err
 	}
 
-	var result []TaskAnswer
+	result := make([]TaskAnswer, 0, len(resultMap))
+
 	for taskID, opts := range resultMap {
 		result = append(result, TaskAnswer{
 			TaskID:  taskID,
@@ -145,46 +169,67 @@ func (r *repository) getCorrectAnswers(ctx context.Context, testID int, isHard b
 // SAVE ANSWERS
 // =========================
 
-func (r *repository) SaveHardAnswers(ctx context.Context, userID int, answers []int) (bool, error) {
+func (r *repository) SaveHardAnswers(
+	ctx context.Context,
+	userID int,
+	answers []int,
+) (bool, error) {
 	return r.saveAnswers(ctx, userID, answers)
 }
 
-func (r *repository) SaveBaseAnswers(ctx context.Context, userID int, answers []int) (bool, error) {
+func (r *repository) SaveBaseAnswers(
+	ctx context.Context,
+	userID int,
+	answers []int,
+) (bool, error) {
 	return r.saveAnswers(ctx, userID, answers)
 }
 
-func (r *repository) saveAnswers(ctx context.Context, userID int, answers []int) (bool, error) {
+func (r *repository) saveAnswers(
+	ctx context.Context,
+	userID int,
+	answers []int,
+) (bool, error) {
 	if len(answers) == 0 {
 		return true, nil
 	}
 
 	query := `
-		INSERT INTO student_answers (student_id, answer_id, date_created)
-		VALUES 
+		INSERT INTO student_answers (
+			student_id,
+			answer_id,
+			date_created
+		)
+		VALUES
 	`
 
 	args := make([]any, 0, len(answers)*2)
 
 	values := ""
 
-	for i, answerID := range answers {
+	validCount := 0
+
+	for _, answerID := range answers {
 		if answerID <= 0 {
 			continue
 		}
 
-		if i > 0 && len(values) > 0 {
+		if validCount > 0 {
 			values += ","
 		}
 
-		values += "(?, ?, NOW())"
+		values += "(?, ?, CURRENT_TIMESTAMP)"
+
 		args = append(args, userID, answerID)
+
+		validCount++
+	}
+
+	if validCount == 0 {
+		return true, nil
 	}
 
 	query += values
-
-	if len(args) == 0 {
-		return true, nil
-	}
 
 	_, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -195,39 +240,24 @@ func (r *repository) saveAnswers(ctx context.Context, userID int, answers []int)
 	return true, nil
 }
 
-// func (r *repository) saveAnswers(ctx context.Context, userID int, answers []TaskAnswer) (bool, error) {
-// 	for _, ans := range answers {
-// 		payload, err := json.Marshal(ans.Options)
-// 		if err != nil {
-// 			r.log.Error("marshal answers failed", zap.Error(err))
-// 			return false, ErrSaveFailed
-// 		}
-//
-// 		_, err = r.db.ExecContext(ctx, `
-// 			insert into student_answers (student_id, answer_id, date_created)
-// 			values (?, ?, now())
-// 		`, userID, string(payload))
-//
-// 		if err != nil {
-// 			r.log.Error("save answers failed", zap.Error(err))
-// 			return false, ErrSaveFailed
-// 		}
-// 	}
-//
-// 	return true, nil
-// }
-
 // =========================
 // DELETE ATTEMPT
 // =========================
 
-func (r *repository) DeleteAttempt(ctx context.Context, userID, testID int) (bool, error) {
+func (r *repository) DeleteAttempt(
+	ctx context.Context,
+	userID,
+	testID int,
+) (bool, error) {
 	res, err := r.db.ExecContext(ctx, `
-		delete sa
-		from student_answers sa
-		join answers a on a.id = sa.answer_id
-		join tasks t on t.id = a.task_id
-		where sa.student_id = ? and t.test_id = ?
+		DELETE FROM student_answers
+		WHERE student_id = ?
+		  AND answer_id IN (
+			  SELECT a.id
+			  FROM answers a
+			  JOIN tasks t ON t.id = a.task_id
+			  WHERE t.test_id = ?
+		  )
 	`, userID, testID)
 
 	if err != nil {

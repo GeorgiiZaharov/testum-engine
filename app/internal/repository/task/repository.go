@@ -23,13 +23,10 @@ type repository struct {
 }
 
 func NewRepository(db db.Executor, log *zap.Logger) Repository {
-	return &repository{
-		db:  db,
-		log: log,
-	}
+	return &repository{db: db, log: log}
 }
 
-// ================= INTERNAL MAPPER =================
+// ================= SCAN =================
 
 func scanTasks(rows *sql.Rows) ([]Task, error) {
 	taskMap := make(map[int]*Task)
@@ -39,12 +36,12 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 			taskID   int
 			text     string
 			imageURL *string
-			isHard   bool
+			isHard   int // SQLite: 0/1
 
 			answerID    int
 			answerText  string
 			answerImage *string
-			isCorrect   bool
+			isCorrect   int // SQLite: 0/1
 		)
 
 		if err := rows.Scan(
@@ -66,8 +63,8 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 				ID:       taskID,
 				Text:     text,
 				ImageURL: imageURL,
-				IsHard:   isHard,
-				Answers:  []Answer{},
+				IsHard:   isHard == 1,
+				Answers:  make([]Answer, 0),
 			}
 			taskMap[taskID] = task
 		}
@@ -76,7 +73,7 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 			ID:        answerID,
 			Text:      answerText,
 			ImageURL:  answerImage,
-			IsCorrect: isCorrect,
+			IsCorrect: isCorrect == 1,
 		})
 	}
 
@@ -92,7 +89,7 @@ func scanTasks(rows *sql.Rows) ([]Task, error) {
 	return result, nil
 }
 
-// ================= BASE QUERY =================
+// ================= QUERY =================
 
 func (r *repository) fetchTasks(ctx context.Context, testID int, isHard bool) ([]Task, error) {
 	query := `
@@ -101,7 +98,6 @@ func (r *repository) fetchTasks(ctx context.Context, testID int, isHard bool) ([
 			t.text,
 			t.image_url,
 			t.is_hard,
-
 			a.id,
 			a.text,
 			a.image_url,
@@ -122,7 +118,7 @@ func (r *repository) fetchTasks(ctx context.Context, testID int, isHard bool) ([
 		)
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	tasks, err := scanTasks(rows)
 	if err != nil {
@@ -137,7 +133,7 @@ func (r *repository) fetchTasks(ctx context.Context, testID int, isHard bool) ([
 	return tasks, nil
 }
 
-// ================= PUBLIC METHODS =================
+// ================= PUBLIC =================
 
 func (r *repository) GetHardTasks(ctx context.Context, testID int) ([]Task, error) {
 	return r.fetchTasks(ctx, testID, true)

@@ -56,7 +56,6 @@ func (m *Manager) seedUsers(ctx context.Context) error {
 			DateCreated:  now,
 			DateModified: now,
 		},
-
 		{
 			ID:           4,
 			Login:        "old_student",
@@ -67,7 +66,6 @@ func (m *Manager) seedUsers(ctx context.Context) error {
 			DateCreated:  yearAgo,
 			DateModified: yearAgo,
 		},
-
 		{
 			ID:           5,
 			Login:        "magistr",
@@ -123,7 +121,7 @@ func (m *Manager) seedUsers(ctx context.Context) error {
 			u.Mail,
 			u.Name,
 			u.Group,
-			u.IsLecturer,
+			boolToInt(u.IsLecturer), // SQLite-safe
 			u.DateCreated,
 			u.DateModified,
 		)

@@ -2,9 +2,10 @@ package file
 
 import (
 	"context"
-	"testum-engine/app/internal/adapter/db"
 
 	"go.uber.org/zap"
+
+	"testum-engine/app/internal/adapter/db"
 )
 
 type FileRepository interface {
@@ -42,7 +43,7 @@ func (r *repository) GetAllTestFiles(ctx context.Context, lecturerID int) ([]str
 	}
 	defer func() { _ = rows.Close() }()
 
-	var files []string
+	files := make([]string, 0)
 
 	for rows.Next() {
 		var file string
@@ -64,10 +65,6 @@ func (r *repository) GetAllTestFiles(ctx context.Context, lecturerID int) ([]str
 			zap.Int("lecturer_id", lecturerID),
 		)
 		return nil, err
-	}
-
-	if len(files) == 0 {
-		return files, nil
 	}
 
 	return files, nil

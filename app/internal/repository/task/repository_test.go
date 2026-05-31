@@ -31,11 +31,7 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../migrations",
 	})
@@ -43,15 +39,18 @@ func setup(t *testing.T) *testEnv {
 
 	t.Cleanup(cleanup)
 
+	_, err = database.Exec(`PRAGMA foreign_keys = ON`)
+	require.NoError(t, err)
+
 	fx := fixtures.New(database)
 
 	require.NoError(t, fx.Reset(ctx))
 	require.NoError(t, fx.SeedAll(ctx))
 
-	repo := NewRepository(database.DB, zap.NewNop())
+	r := NewRepository(database.DB, zap.NewNop()).(*repository)
 
 	return &testEnv{
-		repo: repo,
+		repo: r,
 		ctx:  ctx,
 	}
 }

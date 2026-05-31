@@ -18,7 +18,6 @@ import (
 
 type testEnv struct {
 	repo *repository
-	fx   *fixtures.Manager
 	ctx  context.Context
 }
 
@@ -33,17 +32,16 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../migrations",
 	})
 	require.NoError(t, err)
 
 	t.Cleanup(cleanup)
+
+	_, err = database.Exec(`PRAGMA foreign_keys = ON`)
+	require.NoError(t, err)
 
 	fx := fixtures.New(database)
 
@@ -54,7 +52,6 @@ func setup(t *testing.T) *testEnv {
 
 	return &testEnv{
 		repo: r,
-		fx:   fx,
 		ctx:  ctx,
 	}
 }
@@ -245,8 +242,8 @@ func TestDeleteAttempt_StudentAnswersError(t *testing.T) {
 
 	r := NewRepository(db, zap.NewNop())
 
-	mock.ExpectExec("DELETE sa").
-		WithArgs(3, 1).
+	mock.ExpectExec("DELETE FROM student_answers").
+		WithArgs(3, 1, 3).
 		WillReturnError(errors.New("db error"))
 
 	err = r.DeleteAttempt(context.Background(), 1, 3)
@@ -264,12 +261,10 @@ func TestDeleteAttempt_StudentTestsError(t *testing.T) {
 
 	r := NewRepository(db, zap.NewNop())
 
-	// first query OK
-	mock.ExpectExec("DELETE sa").
-		WithArgs(3, 1).
+	mock.ExpectExec("DELETE FROM student_answers").
+		WithArgs(3, 1, 3).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	// second query FAILS
 	mock.ExpectExec("DELETE FROM student_tests").
 		WithArgs(3, 1).
 		WillReturnError(errors.New("db error"))

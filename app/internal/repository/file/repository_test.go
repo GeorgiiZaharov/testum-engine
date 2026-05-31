@@ -21,7 +21,7 @@ type testEnv struct {
 }
 
 // =========================
-// SETUP (REAL DB + FIXTURES)
+// SETUP (REAL SQLITE + FIXTURES)
 // =========================
 
 func setup(t *testing.T) *testEnv {
@@ -31,17 +31,16 @@ func setup(t *testing.T) *testEnv {
 
 	database, cleanup, err := bootstrap.Setup(bootstrap.Config{
 		DBOptions: db.DBOptions{
-			Host: "localhost",
-			Port: "3306",
-			User: "testum_user",
-			Pass: "testum_pass",
-			Name: "testum",
+			Path: ":memory:",
 		},
 		Migrations: "../../../migrations",
 	})
 	require.NoError(t, err)
 
 	t.Cleanup(cleanup)
+
+	_, err = database.Exec(`PRAGMA foreign_keys = ON`)
+	require.NoError(t, err)
 
 	fx := fixtures.New(database)
 
@@ -63,7 +62,7 @@ func setup(t *testing.T) *testEnv {
 func TestGetAllTestFiles_HappyPath(t *testing.T) {
 	env := setup(t)
 
-	files, err := env.repo.GetAllTestFiles(context.Background(), 6) // lecturer1 has tests
+	files, err := env.repo.GetAllTestFiles(context.Background(), 6)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, files)
@@ -73,7 +72,7 @@ func TestGetAllTestFiles_HappyPath(t *testing.T) {
 }
 
 // =========================
-// NOT FOUND (EMPTY RESULT)
+// NOT FOUND
 // =========================
 
 func TestGetAllTestFiles_NotFound(t *testing.T) {
@@ -81,12 +80,12 @@ func TestGetAllTestFiles_NotFound(t *testing.T) {
 
 	files, err := env.repo.GetAllTestFiles(context.Background(), 999)
 
-	assert.Empty(t, files)
 	assert.NoError(t, err)
+	assert.Empty(t, files)
 }
 
 // =========================
-// QUERY ERROR (SQL MOCK)
+// SQL MOCK TESTS
 // =========================
 
 func TestGetAllTestFiles_QueryError(t *testing.T) {
@@ -104,10 +103,6 @@ func TestGetAllTestFiles_QueryError(t *testing.T) {
 
 	require.Error(t, err)
 }
-
-// =========================
-// ROWS ERROR
-// =========================
 
 func TestGetAllTestFiles_RowsError(t *testing.T) {
 	dbMock, mock, err := sqlmock.New()

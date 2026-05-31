@@ -57,7 +57,7 @@ func (m *Manager) seedTasks(ctx context.Context) error {
 			t.TestID,
 			t.Text,
 			t.ImageURL,
-			t.IsHard,
+			boolToInt(t.IsHard), // SQLite-safe bool
 		)
 		if err != nil {
 			return fmt.Errorf(
@@ -68,4 +68,11 @@ func (m *Manager) seedTasks(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

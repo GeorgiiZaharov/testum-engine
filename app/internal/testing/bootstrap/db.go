@@ -19,7 +19,7 @@ func Setup(cfg Config) (*db.DB, func(), error) {
 
 	if err := db.RunMigrations(sqlDB, db.MigrationConfig{
 		Dir:     cfg.Migrations,
-		Dialect: "mysql",
+		Dialect: "sqlite",
 	}); err != nil {
 		return nil, nil, err
 	}
