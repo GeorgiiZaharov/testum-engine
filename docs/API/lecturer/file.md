@@ -154,5 +154,5 @@ curl -X GET http://localhost:8080/lecturer/tests/123/file \
 ```bash
 curl -X POST http://localhost:8080/lecturer/picture \
   -H "Authorization: Bearer <token>" \
-  -F "picture=@profile.png"
+  -F "file=@profile.png"
 ```

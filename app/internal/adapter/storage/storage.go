@@ -48,7 +48,7 @@ func NewStorageAdapter(fs FileSystem) *StorageAdapter {
 
 func NewStorageAdapterWithDeps(fs FileSystem, saltGen SaltGenerator) *StorageAdapter {
 	base := "data"
-	images := "data/images"
+	images := "../public_html/testum-images"
 
 	_ = fs.MkdirAll(base, os.ModePerm)
 	_ = fs.MkdirAll(images, os.ModePerm)

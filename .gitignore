@@ -33,3 +33,6 @@ go.work.sum
  
 # tmp files
 app_data/
+
+# Sqlite db file
+testum.db

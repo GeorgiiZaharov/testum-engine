@@ -57,7 +57,7 @@ func NewContainer(cfg config.Config) (*Container, error) {
 	}
 
 	migCfg := db.MigrationConfig{
-		Dir:     "./migrations",
+		Dir:     "./app/migrations",
 		Dialect: "sqlite",
 	}
 
