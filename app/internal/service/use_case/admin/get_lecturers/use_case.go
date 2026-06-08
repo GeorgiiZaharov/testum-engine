@@ -75,5 +75,5 @@ func (uc *UseCase) Execute(ctx context.Context, req GetLecturersRequest) (GetLec
 }
 
 func isAdmin(user userrepo.User) bool {
-	return user.Login == "olbgvl" || user.Login == "lector"
+	return user.Login == "olbgvl" || user.Login == "lector" || user.Login == "vasilenk"
 }

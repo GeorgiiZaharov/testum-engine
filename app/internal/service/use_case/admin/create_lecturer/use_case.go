@@ -81,5 +81,5 @@ func (uc *UseCase) Execute(ctx context.Context, req CreateLecturerRequest) (Crea
 }
 
 func isAdmin(user userrepo.User) bool {
-	return user.Login == "olbgvl" || user.Login == "lector"
+	return user.Login == "olbgvl" || user.Login == "lector" || user.Login == "vasilenk"
 }

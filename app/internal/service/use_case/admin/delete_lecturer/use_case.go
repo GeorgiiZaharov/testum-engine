@@ -95,5 +95,5 @@ func (uc *UseCase) Execute(ctx context.Context, req DeleteLecturerRequest) (Dele
 }
 
 func isAdmin(user userrepo.User) bool {
-	return user.Login == "olbgvl" || user.Login == "lector"
+	return user.Login == "olbgvl" || user.Login == "lector" || user.Login == "vasilenk"
 }
