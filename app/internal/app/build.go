@@ -155,6 +155,7 @@ func Build(cfg config.Config) (*App, error) {
 			"http://localhost:3000",
 			"http://localhost:5173",
 			"http://localhost:4173",
+			"http://kappa.cs.petrsu.ru",
 		},
 		AllowedMethods: []string{
 			http.MethodGet,
